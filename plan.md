@@ -96,63 +96,17 @@ All functions implemented in `src/lib/pto.ts` as pure functions. Tests in `src/l
 
 ---
 
-## Phase 5: Core Components
+## Phase 5: App Shell & Navigation
 
-### 5.1 Bottom Navigation
-
-- [ ] `BottomNav` — three-tab bar (Calendar, Events, Settings); highlights active tab; fixed to bottom of viewport
-
-### 5.2 Monthly Calendar
-
-- [ ] `MonthCalendar` — renders a single month grid (Sun–Sat, 7 columns)
-  - [ ] Day cells with day number and up to three annotation dots (green payday / blue-amber-orange timeoff / gray unpaid)
-  - [ ] Red tint/underline on days below reserve
-  - [ ] Today highlighted
-  - [ ] Out-of-month days muted; clicking one shifts the displayed month to include it
-  - [ ] `onSelectDate` callback prop
-
-### 5.3 Annotation Row
-
-- [ ] `AnnotationRow` — single row displaying one annotation with type label, summary text, edit and delete buttons
-  - [ ] Pay-day: "Pay-day · +X.X hrs accrued" or "Pay-day · +X.X hrs accrued (balance: Y.Y hrs)"
-  - [ ] Time Off: "Time Off · Full day (planned)" / "Time Off · X.X hrs (taken)" etc.
-  - [ ] Unpaid: "Unpaid · X days"
-  - [ ] Delete triggers confirmation dialog before calling `onDelete`
-  - [ ] Edit calls `onEdit`
-
-### 5.4 Day Panel
-
-- [ ] `DayPanel` — date heading, projected balance (red if below reserve, "—" if unknown), list of `AnnotationRow`s, Add annotation button
-- [ ] Handles empty state (no annotations yet)
-
-### 5.5 Annotation Form
-
-- [ ] `AnnotationForm` — add/edit form component:
-  - [ ] Date picker (start); end date picker appears for `timeoff` / `unpaid`
-  - [ ] Annotation type selector (Time Off / Pay-day / Unpaid); locked in edit mode
-  - [ ] Type-specific fields: Time Off duration (full / partial — partial hidden for ranges); Pay-day hours + optional balance anchor toggle; Unpaid has no extra fields
-  - [ ] Validation per §6.2
-  - [ ] Save / Cancel actions
-- [ ] Range-split prompt dialog: "Update entire range" vs "Split range" — shown when an edit targets part of an existing range
+- [x] `BottomNav` — three-tab bar (Calendar, Events, Settings); highlights active tab; fixed to bottom of viewport
+- [x] `App.tsx` — renders active view based on selected tab; passes `BottomNav` selected state
+- [x] No router library needed; tab state held in local React state
+- [x] Global layout: full-height flex column, scrollable view area, fixed bottom nav
+- [x] Placeholder components for each view so the shell is immediately usable
 
 ---
 
-## Phase 6: Views
-
-### 6.1 Calendar View
-
-- [ ] `CalendarView` — assembles scrollable multi-month list (±12 months), fixed header, `MonthCalendar` per month, `DayPanel` for selected date
-- [ ] Header: month/year label (updates as user scrolls), Today button, ← / → buttons
-- [ ] Scroll snaps or anchors to month boundaries; Today button scrolls to current month and selects today
-
-### 6.2 Events View
-
-- [ ] `EventsView` — scrollable list of annotated dates using `DayPanel` per date
-- [ ] Past/upcoming divider
-- [ ] Floating + button opens `AnnotationForm` modal with date picker defaulting to today
-- [ ] Empty state: "No events yet. Tap + to add one."
-
-### 6.3 Settings View
+## Phase 6: Settings View
 
 - [ ] `SettingsView`:
   - [ ] Reserve PTO numeric input (saves on blur)
@@ -163,15 +117,61 @@ All functions implemented in `src/lib/pto.ts` as pure functions. Tests in `src/l
 
 ---
 
-## Phase 7: App Shell & Routing
+## Phase 7: Events View & Shared Components
 
-- [ ] `App.tsx` — renders active view based on selected tab; passes `BottomNav` selected state
-- [ ] No router library needed; tab state held in local React state or Zustand
-- [ ] Global layout: full-height flex column, scrollable view area, fixed bottom nav
+### 7.1 Annotation Row
+
+- [ ] `AnnotationRow` — single row displaying one annotation with type label, summary text, edit and delete buttons
+  - [ ] Pay-day: "Pay-day · +X.X hrs accrued" or "Pay-day · +X.X hrs accrued (balance: Y.Y hrs)"
+  - [ ] Time Off: "Time Off · Full day (planned)" / "Time Off · X.X hrs (taken)" etc.
+  - [ ] Unpaid: "Unpaid · X days"
+  - [ ] Delete triggers confirmation dialog before calling `onDelete`
+  - [ ] Edit calls `onEdit`
+
+### 7.2 Day Panel
+
+- [ ] `DayPanel` — date heading, projected balance (red if below reserve, "—" if unknown), list of `AnnotationRow`s, Add annotation button
+- [ ] Handles empty state (no annotations yet)
+
+### 7.3 Annotation Form
+
+- [ ] `AnnotationForm` — add/edit form component:
+  - [ ] Date picker (start); end date picker appears for `timeoff` / `unpaid`
+  - [ ] Annotation type selector (Time Off / Pay-day / Unpaid); locked in edit mode
+  - [ ] Type-specific fields: Time Off duration (full / partial — partial hidden for ranges); Pay-day hours + optional balance anchor toggle; Unpaid has no extra fields
+  - [ ] Validation per §6.2
+  - [ ] Save / Cancel actions
+- [ ] Range-split prompt dialog: "Update entire range" vs "Split range" — shown when an edit targets part of an existing range
+
+### 7.4 Events View
+
+- [ ] `EventsView` — scrollable list of annotated dates using `DayPanel` per date
+- [ ] Past/upcoming divider
+- [ ] Floating + button opens `AnnotationForm` modal with date picker defaulting to today
+- [ ] Empty state: "No events yet. Tap + to add one."
 
 ---
 
-## Phase 8: Polish & Edge Cases
+## Phase 8: Calendar View
+
+### 8.1 Monthly Calendar
+
+- [ ] `MonthCalendar` — renders a single month grid (Sun–Sat, 7 columns)
+  - [ ] Day cells with day number and up to three annotation dots (green payday / blue-amber-orange timeoff / gray unpaid)
+  - [ ] Red tint/underline on days below reserve
+  - [ ] Today highlighted
+  - [ ] Out-of-month days muted; clicking one shifts the displayed month to include it
+  - [ ] `onSelectDate` callback prop
+
+### 8.2 Calendar View
+
+- [ ] `CalendarView` — assembles scrollable multi-month list (±12 months), fixed header, `MonthCalendar` per month, `DayPanel` for selected date
+- [ ] Header: month/year label (updates as user scrolls), Today button, ← / → buttons
+- [ ] Scroll snaps or anchors to month boundaries; Today button scrolls to current month and selects today
+
+---
+
+## Phase 9: Polish & Edge Cases
 
 - [ ] Mobile viewport QA at 390px width — no horizontal overflow on any view
 - [ ] All touch targets verified ≥ 44px
