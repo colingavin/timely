@@ -69,6 +69,36 @@ export function getScheduledHoursInRange(
   return total
 }
 
+/**
+ * Resolve the hours to deduct for a specific date within a TimeOffAnnotation.
+ * Handles number, 'full', and [firstDayHours, lastDayHours] tuple formats.
+ */
+export function resolveTimeOffHours(
+  annotation: TimeOffAnnotation,
+  date: string,
+  schedule: WorkSchedule,
+): number {
+  const { hours, startDate, endDate } = annotation
+
+  if (Array.isArray(hours)) {
+    const [firstHours, lastHours] = hours
+    if (date === startDate) {
+      return firstHours === 'full' ? getScheduledHours(schedule, date) : firstHours
+    }
+    if (date === endDate) {
+      return lastHours === 'full' ? getScheduledHours(schedule, date) : lastHours
+    }
+    // Middle days are always full
+    return getScheduledHours(schedule, date)
+  }
+
+  if (hours === 'full') {
+    return getScheduledHours(schedule, date)
+  }
+
+  return hours
+}
+
 // ---------------------------------------------------------------------------
 // 3.2 Annotation Queries
 // ---------------------------------------------------------------------------
@@ -207,11 +237,7 @@ export function getBalanceOnDate(data: AppData, date: string): number | null {
   // process time off on the anchor date and set up state.
   const anchorDay = dayMap.get(anchor.date)
   if (anchorDay?.timeoff) {
-    const hrs =
-      anchorDay.timeoff.hours === 'full'
-        ? getScheduledHours(schedule, anchor.date)
-        : anchorDay.timeoff.hours
-    balance -= hrs
+    balance -= resolveTimeOffHours(anchorDay.timeoff, anchor.date, schedule)
   }
   // Unpaid on anchor day counts toward next period
   if (anchorDay?.unpaid) {
@@ -250,9 +276,7 @@ export function getBalanceOnDate(data: AppData, date: string): number | null {
 
     // Time Off deduction (after payday accrual)
     if (entry?.timeoff) {
-      const hrs =
-        entry.timeoff.hours === 'full' ? getScheduledHours(schedule, cur) : entry.timeoff.hours
-      balance -= hrs
+      balance -= resolveTimeOffHours(entry.timeoff, cur, schedule)
     }
 
     // Unpaid tracking
@@ -413,9 +437,67 @@ function rangeAnnotationsEqual(
   if (a.type !== b.type) return false
   if (a.startDate !== b.startDate || a.endDate !== b.endDate) return false
   if (a.type === 'timeoff' && b.type === 'timeoff') {
+    if (Array.isArray(a.hours) && Array.isArray(b.hours)) {
+      return a.hours[0] === b.hours[0] && a.hours[1] === b.hours[1]
+    }
     return a.hours === b.hours
   }
   return true
+}
+
+/**
+ * Derive the correct `hours` value for a sub-range of a TimeOffAnnotation.
+ * Accounts for tuple [first, last] hours — the sub-range inherits the
+ * appropriate partial hours only if it includes the original start/end date.
+ */
+function deriveSubRangeHours(
+  original: TimeOffAnnotation,
+  subStart: string,
+  subEnd: string,
+): TimeOffAnnotation['hours'] {
+  const origHours = original.hours
+
+  if (!Array.isArray(origHours)) {
+    // Simple case: number or 'full' — single-day sub-ranges get the value,
+    // multi-day sub-ranges keep it as-is (number only valid for single-day)
+    if (typeof origHours === 'number' && subStart !== subEnd) return 'full'
+    return origHours
+  }
+
+  const [firstHours, lastHours] = origHours
+  const includesFirst = subStart === original.startDate
+  const includesLast = subEnd === original.endDate
+  const isSingleDay = subStart === subEnd
+
+  if (isSingleDay) {
+    // Single day inherits whichever endpoint it matches, or 'full' for middle days
+    if (includesFirst) return firstHours
+    if (includesLast) return lastHours
+    return 'full'
+  }
+
+  // Multi-day sub-range
+  const first = includesFirst ? firstHours : 'full'
+  const last = includesLast ? lastHours : 'full'
+
+  // If both are 'full', simplify to just 'full'
+  if (first === 'full' && last === 'full') return 'full'
+
+  return [first, last]
+}
+
+/** Build a TimeOffAnnotation sub-range with correctly derived hours. */
+function makeTimeOffSubRange(
+  original: TimeOffAnnotation,
+  subStart: string,
+  subEnd: string,
+): TimeOffAnnotation {
+  return {
+    ...original,
+    startDate: subStart,
+    endDate: subEnd,
+    hours: deriveSubRangeHours(original, subStart, subEnd),
+  }
 }
 
 export function updateRangeAnnotation(
@@ -444,17 +526,25 @@ export function updateRangeAnnotation(
   // Add remainder ranges for parts of the original not covered by the updated
   // Prefix: original.startDate to day before updated.startDate
   if (updated.startDate > original.startDate) {
-    const prefix = { ...original, endDate: addDays(updated.startDate, -1) }
-    if (prefix.startDate <= prefix.endDate) {
-      newAnnotations.push(prefix as TimeOffAnnotation | UnpaidAnnotation)
+    const prefixEnd = addDays(updated.startDate, -1)
+    if (original.startDate <= prefixEnd) {
+      if (original.type === 'timeoff') {
+        newAnnotations.push(makeTimeOffSubRange(original, original.startDate, prefixEnd))
+      } else {
+        newAnnotations.push({ ...original, endDate: prefixEnd })
+      }
     }
   }
 
   // Suffix: day after updated.endDate to original.endDate
   if (updated.endDate < original.endDate) {
-    const suffix = { ...original, startDate: addDays(updated.endDate, 1) }
-    if (suffix.startDate <= suffix.endDate) {
-      newAnnotations.push(suffix as TimeOffAnnotation | UnpaidAnnotation)
+    const suffixStart = addDays(updated.endDate, 1)
+    if (suffixStart <= original.endDate) {
+      if (original.type === 'timeoff') {
+        newAnnotations.push(makeTimeOffSubRange(original, suffixStart, original.endDate))
+      } else {
+        newAnnotations.push({ ...original, startDate: suffixStart })
+      }
     }
   }
 
@@ -478,16 +568,24 @@ export function removeRangeAnnotation(
 
   // 'split' mode: retain prefix and/or suffix outside [removeStart, removeEnd]
   if (annotation.startDate < removeStart) {
-    const prefix = { ...annotation, endDate: addDays(removeStart, -1) }
-    if (prefix.startDate <= prefix.endDate) {
-      newAnnotations.push(prefix as TimeOffAnnotation | UnpaidAnnotation)
+    const prefixEnd = addDays(removeStart, -1)
+    if (annotation.startDate <= prefixEnd) {
+      if (annotation.type === 'timeoff') {
+        newAnnotations.push(makeTimeOffSubRange(annotation, annotation.startDate, prefixEnd))
+      } else {
+        newAnnotations.push({ ...annotation, endDate: prefixEnd })
+      }
     }
   }
 
   if (annotation.endDate > removeEnd) {
-    const suffix = { ...annotation, startDate: addDays(removeEnd, 1) }
-    if (suffix.startDate <= suffix.endDate) {
-      newAnnotations.push(suffix as TimeOffAnnotation | UnpaidAnnotation)
+    const suffixStart = addDays(removeEnd, 1)
+    if (suffixStart <= annotation.endDate) {
+      if (annotation.type === 'timeoff') {
+        newAnnotations.push(makeTimeOffSubRange(annotation, suffixStart, annotation.endDate))
+      } else {
+        newAnnotations.push({ ...annotation, startDate: suffixStart })
+      }
     }
   }
 

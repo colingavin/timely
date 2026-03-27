@@ -42,12 +42,22 @@ function summarize(annotation: Annotation, date: string): string {
     case 'timeoff': {
       const today = new Date().toISOString().slice(0, 10)
       const status = date <= today ? 'taken' : 'planned'
-      if (annotation.hours === 'full') {
-        const days = daysBetweenInclusive(annotation.startDate, annotation.endDate)
+      const days = daysBetweenInclusive(annotation.startDate, annotation.endDate)
+      const { hours } = annotation
+
+      if (Array.isArray(hours)) {
+        const [first, last] = hours
+        const parts: string[] = []
+        if (first !== 'full') parts.push(`first: ${first} hrs`)
+        if (last !== 'full') parts.push(`last: ${last} hrs`)
+        const detail = parts.length > 0 ? ` (${parts.join(', ')})` : ', full day'
+        return `Time Off · ${days} days${detail} (${status})`
+      }
+      if (hours === 'full') {
         if (days > 1) return `Time Off · ${days} days, full day (${status})`
         return `Time Off · Full day (${status})`
       }
-      return `Time Off · ${annotation.hours} hrs (${status})`
+      return `Time Off · ${hours} hrs (${status})`
     }
     case 'unpaid': {
       const days = daysBetweenInclusive(annotation.startDate, annotation.endDate)

@@ -69,13 +69,58 @@ export function AnnotationForm({
   const [endDate, setEndDate] = useState(defaultEnd)
 
   // Time Off fields
-  const defaultDuration =
-    prefill?.type === 'timeoff' ? (prefill.hours === 'full' ? 'full' : 'partial') : 'full'
-  const defaultPartialHours =
-    prefill?.type === 'timeoff' && prefill.hours !== 'full' ? String(prefill.hours) : ''
+  // Single-day: duration is 'full' or 'partial' with partialHours
+  // Multi-day: always full middle days; first/last can be overridden
+  function initTimeOffState() {
+    if (prefill?.type !== 'timeoff') {
+      return {
+        duration: 'full' as const,
+        partialHours: '',
+        firstPartial: false,
+        firstHours: '',
+        lastPartial: false,
+        lastHours: '',
+      }
+    }
+    const { hours } = prefill
+    if (Array.isArray(hours)) {
+      const [first, last] = hours
+      return {
+        duration: 'full' as const,
+        partialHours: '',
+        firstPartial: first !== 'full',
+        firstHours: first === 'full' ? '' : String(first),
+        lastPartial: last !== 'full',
+        lastHours: last === 'full' ? '' : String(last),
+      }
+    }
+    if (hours === 'full') {
+      return {
+        duration: 'full' as const,
+        partialHours: '',
+        firstPartial: false,
+        firstHours: '',
+        lastPartial: false,
+        lastHours: '',
+      }
+    }
+    return {
+      duration: 'partial' as const,
+      partialHours: String(hours),
+      firstPartial: false,
+      firstHours: '',
+      lastPartial: false,
+      lastHours: '',
+    }
+  }
 
-  const [duration, setDuration] = useState<'full' | 'partial'>(defaultDuration)
-  const [partialHours, setPartialHours] = useState(defaultPartialHours)
+  const initTO = initTimeOffState()
+  const [duration, setDuration] = useState<'full' | 'partial'>(initTO.duration)
+  const [partialHours, setPartialHours] = useState(initTO.partialHours)
+  const [firstPartial, setFirstPartial] = useState(initTO.firstPartial)
+  const [firstHours, setFirstHours] = useState(initTO.firstHours)
+  const [lastPartial, setLastPartial] = useState(initTO.lastPartial)
+  const [lastHours, setLastHours] = useState(initTO.lastHours)
 
   // Pay-day fields
   const [hoursAccrued, setHoursAccrued] = useState(
@@ -107,13 +152,39 @@ export function AnnotationForm({
 
     switch (type) {
       case 'timeoff': {
-        if (duration === 'partial' && !isMultiDay) {
-          const hrs = parseFloat(partialHours)
-          if (isNaN(hrs) || hrs <= 0) {
-            setError('Enter a positive number of hours.')
-            return null
+        if (!isMultiDay) {
+          // Single day
+          if (duration === 'partial') {
+            const hrs = parseFloat(partialHours)
+            if (isNaN(hrs) || hrs <= 0) {
+              setError('Enter a positive number of hours.')
+              return null
+            }
+            return { type: 'timeoff', startDate, endDate: startDate, hours: hrs }
           }
-          return { type: 'timeoff', startDate, endDate: startDate, hours: hrs }
+          return { type: 'timeoff', startDate, endDate, hours: 'full' }
+        }
+        // Multi-day: check first/last partial overrides
+        if (firstPartial || lastPartial) {
+          let first: number | 'full' = 'full'
+          let last: number | 'full' = 'full'
+          if (firstPartial) {
+            const hrs = parseFloat(firstHours)
+            if (isNaN(hrs) || hrs <= 0) {
+              setError('Enter positive hours for the first day.')
+              return null
+            }
+            first = hrs
+          }
+          if (lastPartial) {
+            const hrs = parseFloat(lastHours)
+            if (isNaN(hrs) || hrs <= 0) {
+              setError('Enter positive hours for the last day.')
+              return null
+            }
+            last = hrs
+          }
+          return { type: 'timeoff', startDate, endDate, hours: [first, last] }
         }
         return { type: 'timeoff', startDate, endDate, hours: 'full' }
       }
@@ -262,6 +333,59 @@ export function AnnotationForm({
                 <span className="text-muted-foreground text-sm">hrs</span>
               </div>
             )}
+          </div>
+        )}
+
+        {type === 'timeoff' && isMultiDay && (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={firstPartial}
+                  onChange={(e) => setFirstPartial(e.target.checked)}
+                />
+                Partial first day
+              </label>
+              {firstPartial && (
+                <div className="flex items-center gap-2 pl-6">
+                  <Input
+                    type="number"
+                    min={0}
+                    step="any"
+                    placeholder="Hours"
+                    value={firstHours}
+                    onChange={(e) => setFirstHours(e.target.value)}
+                    className="w-24"
+                  />
+                  <span className="text-muted-foreground text-sm">hrs</span>
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={lastPartial}
+                  onChange={(e) => setLastPartial(e.target.checked)}
+                />
+                Partial last day
+              </label>
+              {lastPartial && (
+                <div className="flex items-center gap-2 pl-6">
+                  <Input
+                    type="number"
+                    min={0}
+                    step="any"
+                    placeholder="Hours"
+                    value={lastHours}
+                    onChange={(e) => setLastHours(e.target.value)}
+                    className="w-24"
+                  />
+                  <span className="text-muted-foreground text-sm">hrs</span>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

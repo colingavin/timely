@@ -16,12 +16,17 @@ export interface PaydayAnnotation {
   currentHours?: number // Optional balance anchor (>= 0)
 }
 
+/** Hours specification for a time-off day. */
+export type DayHours = number | 'full'
+
 export interface TimeOffAnnotation {
   type: 'timeoff'
   startDate: string // ISO 8601 date (YYYY-MM-DD)
   endDate: string // ISO 8601 date; equal to startDate for single day
-  hours: number | 'full' // 'full' = scheduled hours from work schedule
-  // number only valid when startDate === endDate (single day)
+  hours: DayHours | [DayHours, DayHours]
+  // number: partial hours (single-day only)
+  // 'full': full scheduled hours every day
+  // [first, last]: first day hours, last day hours; middle days are 'full'
 }
 
 export interface UnpaidAnnotation {

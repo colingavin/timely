@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   getScheduledHours,
   getScheduledHoursInRange,
+  resolveTimeOffHours,
   getAnnotationsForDate,
   getAnnotatedDatesInRange,
   getBalanceOnDate,
@@ -704,5 +705,207 @@ describe('removeRangeAnnotation', () => {
     const result = removeRangeAnnotation(data, annotation, '2026-01-12', '2026-01-16', 'replace')
     expect(result.annotations).toHaveLength(1)
     expect(result.annotations[0]).toEqual(pd)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// resolveTimeOffHours (tuple hours)
+// ---------------------------------------------------------------------------
+
+describe('resolveTimeOffHours', () => {
+  it('returns scheduled hours for full single-day', () => {
+    const ann: TimeOffAnnotation = {
+      type: 'timeoff',
+      startDate: '2026-01-12',
+      endDate: '2026-01-12',
+      hours: 'full',
+    }
+    // Monday = 8 hrs
+    expect(resolveTimeOffHours(ann, '2026-01-12', schedule)).toBe(8)
+  })
+
+  it('returns partial hours for single-day', () => {
+    const ann: TimeOffAnnotation = {
+      type: 'timeoff',
+      startDate: '2026-01-12',
+      endDate: '2026-01-12',
+      hours: 3,
+    }
+    expect(resolveTimeOffHours(ann, '2026-01-12', schedule)).toBe(3)
+  })
+
+  it('returns first-day hours from tuple on start date', () => {
+    const ann: TimeOffAnnotation = {
+      type: 'timeoff',
+      startDate: '2026-01-12',
+      endDate: '2026-01-16',
+      hours: [4, 2],
+    }
+    expect(resolveTimeOffHours(ann, '2026-01-12', schedule)).toBe(4)
+  })
+
+  it('returns last-day hours from tuple on end date', () => {
+    const ann: TimeOffAnnotation = {
+      type: 'timeoff',
+      startDate: '2026-01-12',
+      endDate: '2026-01-16',
+      hours: [4, 2],
+    }
+    expect(resolveTimeOffHours(ann, '2026-01-16', schedule)).toBe(2)
+  })
+
+  it('returns full scheduled hours for middle days in tuple mode', () => {
+    const ann: TimeOffAnnotation = {
+      type: 'timeoff',
+      startDate: '2026-01-12',
+      endDate: '2026-01-16',
+      hours: [4, 2],
+    }
+    // Wed Jan 14 = 8 hrs scheduled
+    expect(resolveTimeOffHours(ann, '2026-01-14', schedule)).toBe(8)
+  })
+
+  it('handles full as first/last in tuple', () => {
+    const ann: TimeOffAnnotation = {
+      type: 'timeoff',
+      startDate: '2026-01-12',
+      endDate: '2026-01-16',
+      hours: ['full', 3],
+    }
+    expect(resolveTimeOffHours(ann, '2026-01-12', schedule)).toBe(8)
+    expect(resolveTimeOffHours(ann, '2026-01-16', schedule)).toBe(3)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Balance computation with tuple hours
+// ---------------------------------------------------------------------------
+
+describe('getBalanceOnDate with tuple hours', () => {
+  it('deducts partial first and last day from a range', () => {
+    const data = makeData({
+      annotations: [
+        { type: 'payday', date: '2026-01-09', hoursAccrued: 4, currentHours: 80 },
+        // Mon-Fri, first day 4hrs, last day 2hrs, middle days full (8 each)
+        {
+          type: 'timeoff',
+          startDate: '2026-01-12',
+          endDate: '2026-01-16',
+          hours: [4, 2] as [number, number],
+        },
+      ],
+    })
+    // Total deduction: 4 + 8 + 8 + 8 + 2 = 30
+    expect(getBalanceOnDate(data, '2026-01-16')).toBe(50) // 80 - 30
+  })
+
+  it('deducts correctly day by day with tuple hours', () => {
+    const data = makeData({
+      annotations: [
+        { type: 'payday', date: '2026-01-09', hoursAccrued: 4, currentHours: 80 },
+        {
+          type: 'timeoff',
+          startDate: '2026-01-12',
+          endDate: '2026-01-14',
+          hours: [3, 5] as [number, number],
+        },
+      ],
+    })
+    // Mon: 80 - 3 = 77
+    expect(getBalanceOnDate(data, '2026-01-12')).toBe(77)
+    // Tue: 77 - 8 = 69
+    expect(getBalanceOnDate(data, '2026-01-13')).toBe(69)
+    // Wed: 69 - 5 = 64
+    expect(getBalanceOnDate(data, '2026-01-14')).toBe(64)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Range splitting with tuple hours
+// ---------------------------------------------------------------------------
+
+describe('removeRangeAnnotation with tuple hours', () => {
+  // Mon-Thu with first day 5hrs, last day full
+  const annotation: TimeOffAnnotation = {
+    type: 'timeoff',
+    startDate: '2026-01-12',
+    endDate: '2026-01-15',
+    hours: [5, 'full'],
+  }
+
+  it('removing second day produces single-day partial first + full remainder', () => {
+    const data = makeData({ annotations: [annotation] })
+    // Remove Tue Jan 13
+    const result = removeRangeAnnotation(data, annotation, '2026-01-13', '2026-01-13', 'split')
+    expect(result.annotations).toHaveLength(2)
+    const sorted = [...result.annotations].sort((a, b) => {
+      const aDate = a.type === 'payday' ? a.date : a.startDate
+      const bDate = b.type === 'payday' ? b.date : b.startDate
+      return aDate.localeCompare(bDate)
+    })
+    // First day: single day at 5hrs
+    expect(sorted[0]).toMatchObject({ startDate: '2026-01-12', endDate: '2026-01-12', hours: 5 })
+    // Remainder: Wed-Thu, full days (no tuple needed since neither is the original first)
+    expect(sorted[1]).toMatchObject({
+      startDate: '2026-01-14',
+      endDate: '2026-01-15',
+      hours: 'full',
+    })
+  })
+
+  it('removing first day leaves full-day remainder', () => {
+    const data = makeData({ annotations: [annotation] })
+    const result = removeRangeAnnotation(data, annotation, '2026-01-12', '2026-01-12', 'split')
+    expect(result.annotations).toHaveLength(1)
+    // Tue-Thu: no partial days, all full
+    expect(result.annotations[0]).toMatchObject({
+      startDate: '2026-01-13',
+      endDate: '2026-01-15',
+      hours: 'full',
+    })
+  })
+
+  it('removing last day preserves first-day partial in remainder', () => {
+    const ann: TimeOffAnnotation = {
+      type: 'timeoff',
+      startDate: '2026-01-12',
+      endDate: '2026-01-15',
+      hours: [5, 3],
+    }
+    const data = makeData({ annotations: [ann] })
+    const result = removeRangeAnnotation(data, ann, '2026-01-15', '2026-01-15', 'split')
+    expect(result.annotations).toHaveLength(1)
+    // Mon-Wed: first day still partial at 5, last (Wed) becomes full
+    expect(result.annotations[0]).toMatchObject({
+      startDate: '2026-01-12',
+      endDate: '2026-01-14',
+      hours: [5, 'full'],
+    })
+  })
+
+  it('removing middle of [first, last] tuple preserves both partials', () => {
+    const ann: TimeOffAnnotation = {
+      type: 'timeoff',
+      startDate: '2026-01-12',
+      endDate: '2026-01-16',
+      hours: [3, 2],
+    }
+    const data = makeData({ annotations: [ann] })
+    // Remove Wed-Thu (Jan 14-15)
+    const result = removeRangeAnnotation(data, ann, '2026-01-14', '2026-01-15', 'split')
+    expect(result.annotations).toHaveLength(2)
+    const sorted = [...result.annotations].sort((a, b) => {
+      const aDate = a.type === 'payday' ? a.date : a.startDate
+      const bDate = b.type === 'payday' ? b.date : b.startDate
+      return aDate.localeCompare(bDate)
+    })
+    // Mon-Tue: first day 3hrs, Tue is full → tuple [3, 'full']
+    expect(sorted[0]).toMatchObject({
+      startDate: '2026-01-12',
+      endDate: '2026-01-13',
+      hours: [3, 'full'],
+    })
+    // Fri: single day at 2hrs (was the original last day)
+    expect(sorted[1]).toMatchObject({ startDate: '2026-01-16', endDate: '2026-01-16', hours: 2 })
   })
 })
