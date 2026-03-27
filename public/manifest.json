@@ -1,0 +1,17 @@
+{
+  "name": "Timely",
+  "short_name": "Timely",
+  "description": "PTO accrual and usage tracker",
+  "start_url": "/timely/",
+  "scope": "/timely/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
