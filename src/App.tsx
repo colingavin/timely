@@ -9,7 +9,7 @@ export default function App() {
 
   return (
     <div className="flex h-dvh flex-col">
-      <main className="flex flex-1 overflow-y-auto">
+      <main className="min-h-0 flex-1 overflow-y-auto">
         {tab === 'calendar' && <CalendarView />}
         {tab === 'events' && <EventsView />}
         {tab === 'settings' && <SettingsView />}

@@ -108,12 +108,12 @@ All functions implemented in `src/lib/pto.ts` as pure functions. Tests in `src/l
 
 ## Phase 6: Settings View
 
-- [ ] `SettingsView`:
-  - [ ] Reserve PTO numeric input (saves on blur)
-  - [ ] Work schedule table — one row per day of week, hours input per row
-  - [ ] Export: triggers JSON file download
-  - [ ] Import: file picker → JSON validation → confirmation prompt → data replacement; inline error on invalid file
-  - [ ] Clear all data: confirmation dialog before wiping store
+- [x] `SettingsView`:
+  - [x] Reserve PTO numeric input (saves on blur)
+  - [x] Work schedule table — one row per day of week, hours input per row
+  - [x] Export: triggers JSON file download
+  - [x] Import: file picker → JSON validation → confirmation prompt → data replacement; inline error on invalid file
+  - [x] Clear all data: confirmation dialog before wiping store
 
 ---
 
