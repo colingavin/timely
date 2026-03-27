@@ -206,7 +206,7 @@ export function CalendarView() {
   return (
     <div className="flex h-full flex-col">
       {/* Fixed header */}
-      <div className="border-border bg-background flex shrink-0 items-center justify-between border-b px-2 py-2">
+      <div className="border-border bg-background grid shrink-0 grid-cols-[auto_1fr_1fr_auto] items-center border-b px-2 py-2">
         <Button
           variant="ghost"
           size="icon"
@@ -215,8 +215,10 @@ export function CalendarView() {
         >
           <ChevronLeft className="h-5 w-5" />
         </Button>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{monthLabel(current.year, current.month)}</span>
+        <span className="text-right text-sm font-medium pr-2">
+          {monthLabel(current.year, current.month)}
+        </span>
+        <div className="pl-2">
           <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleToday}>
             Today
           </Button>
