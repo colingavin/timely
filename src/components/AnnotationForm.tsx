@@ -175,9 +175,7 @@ export function AnnotationForm({
   return (
     <>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
-        <h2 className="text-base font-medium">
-          {isEditing ? 'Edit Annotation' : 'Add Annotation'}
-        </h2>
+        <h2 className="text-base font-medium">{isEditing ? 'Edit Event' : 'Add Event'}</h2>
 
         {/* Annotation Type */}
         <div className="flex flex-col gap-1.5">
@@ -322,9 +320,9 @@ export function AnnotationForm({
       <AlertDialog open={showReplaceDialog} onOpenChange={setShowReplaceDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Replace existing annotation?</AlertDialogTitle>
+            <AlertDialogTitle>Replace existing event?</AlertDialogTitle>
             <AlertDialogDescription>
-              An annotation of this type already exists on this date. Saving will replace it.
+              An event of this type already exists on this date. Saving will replace it.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -144,7 +144,7 @@ export function EventsView() {
   }
 
   function handleEditProjectedPayday(date: string, hoursAccrued: number) {
-    // Open form as a new annotation (not edit), pre-populated with projected values
+    // Open form as a new event (not edit), pre-populated with projected values
     setEditTarget(null)
     setFormDate(date)
     setDefaultPayday({ type: 'payday', date, hoursAccrued })

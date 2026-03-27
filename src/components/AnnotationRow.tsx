@@ -84,11 +84,11 @@ export function AnnotationRow({
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete annotation?</AlertDialogTitle>
+              <AlertDialogTitle>Delete event?</AlertDialogTitle>
               <AlertDialogDescription>
                 {multiDay
-                  ? `This ${annotation.type === 'timeoff' ? 'time off' : 'unpaid'} annotation spans ${formatShort((annotation as { startDate: string }).startDate)} – ${formatShort((annotation as { endDate: string }).endDate)}. Delete just this day or the entire range?`
-                  : `This will remove this ${annotation.type === 'payday' ? 'pay-day' : annotation.type === 'timeoff' ? 'time off' : 'unpaid'} annotation.`}
+                  ? `This ${annotation.type === 'timeoff' ? 'time off' : 'unpaid'} event spans ${formatShort((annotation as { startDate: string }).startDate)} – ${formatShort((annotation as { endDate: string }).endDate)}. Delete just this day or the entire range?`
+                  : `This will remove this ${annotation.type === 'payday' ? 'pay-day' : annotation.type === 'timeoff' ? 'time off' : 'unpaid'} event.`}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

@@ -10,7 +10,7 @@ interface DayPanelProps {
   date: string
   onAddAnnotation: (date: string) => void
   onEditAnnotation: (annotation: Annotation, date: string) => void
-  /** Called when the user taps edit on a projected payday (not a real annotation) */
+  /** Called when the user taps edit on a projected payday (not a real event) */
   onEditProjectedPayday?: (date: string, hoursAccrued: number) => void
 }
 
@@ -113,7 +113,7 @@ export function DayPanel({
           )}
         </div>
       ) : (
-        <p className="text-muted-foreground py-2 text-sm">No annotations</p>
+        <p className="text-muted-foreground py-2 text-sm">No events</p>
       )}
 
       <Button
@@ -123,7 +123,7 @@ export function DayPanel({
         onClick={() => onAddAnnotation(date)}
       >
         <Plus className="mr-1 h-4 w-4" />
-        Add annotation
+        Add event
       </Button>
     </div>
   )

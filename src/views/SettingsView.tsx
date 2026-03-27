@@ -194,8 +194,8 @@ export function SettingsView() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Clear all data?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete all your annotations and settings. This action cannot
-                  be undone.
+                  This will permanently delete all your events and settings. This action cannot be
+                  undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
