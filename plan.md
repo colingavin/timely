@@ -28,60 +28,60 @@ All functions implemented in `src/lib/pto.ts` as pure functions. Tests in `src/l
 
 ### 3.1 Work Schedule Helpers
 
-- [ ] `getScheduledHours(schedule, date)` — returns scheduled hours for the weekday of `date`
-- [ ] `getScheduledHoursInRange(schedule, start, end)` — sum of scheduled hours over a date range
-- [ ] Tests: hours vary by weekday; non-work days return 0; multi-week ranges sum correctly
+- [x] `getScheduledHours(schedule, date)` — returns scheduled hours for the weekday of `date`
+- [x] `getScheduledHoursInRange(schedule, start, end)` — sum of scheduled hours over a date range
+- [x] Tests: hours vary by weekday; non-work days return 0; multi-week ranges sum correctly
 
 ### 3.2 Annotation Queries
 
-- [ ] `getAnnotationsForDate(data, date)` — returns all annotations (expanding ranges) that apply to a date
-- [ ] `getAnnotatedDatesInRange(data, start, end)` — returns sorted list of dates with at least one annotation
-- [ ] Tests: single-day, multi-day ranges, date on boundary, date outside all ranges
+- [x] `getAnnotationsForDate(data, date)` — returns all annotations (expanding ranges) that apply to a date
+- [x] `getAnnotatedDatesInRange(data, start, end)` — returns sorted list of dates with at least one annotation
+- [x] Tests: single-day, multi-day ranges, date on boundary, date outside all ranges
 
 ### 3.3 Balance Computation
 
-- [ ] `getBalanceOnDate(data, date)` — implements the §2.5 algorithm:
+- [x] `getBalanceOnDate(data, date)` — implements the §2.5 algorithm:
   - Find most recent anchoring Pay-day on or before `date`
   - Walk forward day by day, applying Pay-day accrual (before same-day Time Off), Time Off deductions, and tracking unpaid hours
   - Apply auto-accrual every 14 days with hours-based pro-ration formula
   - Return `null` if no anchoring Pay-day exists
-- [ ] `getBalanceRange(data, start, end)` — calls `getBalanceOnDate` efficiently across a range (single forward pass)
-- [ ] Tests:
-  - [ ] Balance from a Pay-day anchor with `currentHours`
-  - [ ] Accrual-only Pay-day (no `currentHours`)
-  - [ ] Multiple pay periods with auto-accrual every 14 days
-  - [ ] Pay-day accrual applied before same-day Time Off deduction
-  - [ ] Full-day Time Off uses work schedule hours for that weekday
-  - [ ] Partial-hours Time Off (single day)
-  - [ ] Unpaid days reduce accrual via scheduled-hours formula
-  - [ ] Unpaid day with zero scheduled hours has no effect on accrual
-  - [ ] No anchoring Pay-day → returns `null`
-  - [ ] Balance going negative
-  - [ ] `getBalanceRange` produces consistent results with repeated `getBalanceOnDate` calls
+- [x] `getBalanceRange(data, start, end)` — calls `getBalanceOnDate` efficiently across a range (single forward pass)
+- [x] Tests:
+  - [x] Balance from a Pay-day anchor with `currentHours`
+  - [x] Accrual-only Pay-day (no `currentHours`)
+  - [x] Multiple pay periods with auto-accrual every 14 days
+  - [x] Pay-day accrual applied before same-day Time Off deduction
+  - [x] Full-day Time Off uses work schedule hours for that weekday
+  - [x] Partial-hours Time Off (single day)
+  - [x] Unpaid days reduce accrual via scheduled-hours formula
+  - [x] Unpaid day with zero scheduled hours has no effect on accrual
+  - [x] No anchoring Pay-day → returns `null`
+  - [x] Balance going negative
+  - [x] `getBalanceRange` produces consistent results with repeated `getBalanceOnDate` calls
 
 ### 3.4 Reserve
 
-- [ ] `getDatesBelowReserve(data, start, end)` — returns dates where projected balance < `reserveHours`
-- [ ] Tests: reserve = 0, reserve > 0, dates straddling threshold
+- [x] `getDatesBelowReserve(data, start, end)` — returns dates where projected balance < `reserveHours`
+- [x] Tests: reserve = 0, reserve > 0, dates straddling threshold
 
 ### 3.5 Mutations
 
-- [ ] `addAnnotation(data, annotation)` — appends to `annotations[]`; throws if a Pay-day already exists on that date
-- [ ] `updatePaydayAnnotation(data, updated)` — replaces the Pay-day matching `updated.date`
-- [ ] `removePaydayAnnotation(data, date)` — removes Pay-day with matching date
-- [ ] `updateRangeAnnotation(data, original, updated, rangeEdit)`:
+- [x] `addAnnotation(data, annotation)` — appends to `annotations[]`; throws if a Pay-day already exists on that date
+- [x] `updatePaydayAnnotation(data, updated)` — replaces the Pay-day matching `updated.date`
+- [x] `removePaydayAnnotation(data, date)` — removes Pay-day with matching date
+- [x] `updateRangeAnnotation(data, original, updated, rangeEdit)`:
   - `'replace'`: swap `original` for `updated` entirely
   - `'split'`: derive changed sub-range from diff of `original` and `updated`; keep unaffected remainder as one or two new annotations
-- [ ] `removeRangeAnnotation(data, annotation, removeStart, removeEnd, rangeEdit)`:
+- [x] `removeRangeAnnotation(data, annotation, removeStart, removeEnd, rangeEdit)`:
   - `'replace'`: remove the entire annotation
   - `'split'`: remove `[removeStart, removeEnd]` sub-range; retain prefix and/or suffix as separate annotations
-- [ ] Tests:
-  - [ ] `addAnnotation` throws on duplicate Pay-day date
-  - [ ] `updateRangeAnnotation 'replace'` replaces whole range
-  - [ ] `updateRangeAnnotation 'split'` produces 0, 1, or 2 remainder ranges correctly
-  - [ ] `removeRangeAnnotation 'replace'` removes entire range
-  - [ ] `removeRangeAnnotation 'split'` with interior sub-range produces two remainders
-  - [ ] `removeRangeAnnotation 'split'` with prefix/suffix sub-range produces one remainder
+- [x] Tests:
+  - [x] `addAnnotation` throws on duplicate Pay-day date
+  - [x] `updateRangeAnnotation 'replace'` replaces whole range
+  - [x] `updateRangeAnnotation 'split'` produces 0, 1, or 2 remainder ranges correctly
+  - [x] `removeRangeAnnotation 'replace'` removes entire range
+  - [x] `removeRangeAnnotation 'split'` with interior sub-range produces two remainders
+  - [x] `removeRangeAnnotation 'split'` with prefix/suffix sub-range produces one remainder
 
 ---
 
