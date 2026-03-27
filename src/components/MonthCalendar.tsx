@@ -14,6 +14,15 @@ function toDateStr(y: number, m: number, d: number): string {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr + 'T00:00:00')
+  d.setDate(d.getDate() + days)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 interface DayCell {
   date: string
   day: number
@@ -51,6 +60,22 @@ function buildGrid(year: number, month: number): DayCell[] {
   return cells
 }
 
+type HighlightLevel = 'none' | 'yellow' | 'red'
+type RunPosition = 'none' | 'solo' | 'start' | 'middle' | 'end'
+
+interface CellInfo {
+  cell: DayCell
+  balance: number | null
+  balanceChanged: boolean // balance differs from previous day
+  highlight: HighlightLevel
+  runPosition: RunPosition
+  hasPayday: boolean
+  hasTimeoff: boolean
+  hasUnpaid: boolean
+  paydayAnchored: boolean
+  timeoffPast: boolean
+}
+
 function useData(): AppData {
   const version = useAppData((s) => s.version)
   const reserveHours = useAppData((s) => s.reserveHours)
@@ -62,12 +87,71 @@ function useData(): AppData {
   )
 }
 
+function computeCellInfos(cells: DayCell[], data: AppData, today: string): CellInfo[] {
+  // Compute balances for all cells plus the day before the first cell
+  const prevDate = addDays(cells[0].date, -1)
+  const prevBalance = getBalanceOnDate(data, prevDate)
+
+  const infos: CellInfo[] = []
+  let lastBalance = prevBalance
+
+  for (const cell of cells) {
+    const balance = getBalanceOnDate(data, cell.date)
+    const resolved = getAnnotationsForDate(data, cell.date)
+
+    let highlight: HighlightLevel = 'none'
+    if (cell.inMonth && balance !== null) {
+      if (balance < 0) highlight = 'red'
+      else if (balance < data.reserveHours) highlight = 'yellow'
+    }
+
+    const balanceChanged =
+      cell.inMonth && balance !== null && (lastBalance === null || balance !== lastBalance)
+
+    infos.push({
+      cell,
+      balance,
+      balanceChanged,
+      highlight,
+      runPosition: 'none', // computed below
+      hasPayday: !!resolved.payday,
+      hasTimeoff: !!resolved.timeoff,
+      hasUnpaid: !!resolved.unpaid,
+      paydayAnchored: !!resolved.payday?.currentHours,
+      timeoffPast: !!resolved.timeoff && cell.date <= today,
+    })
+
+    lastBalance = balance
+  }
+
+  // Compute run positions for highlighted cells within each row of 7
+  for (let row = 0; row < 6; row++) {
+    const start = row * 7
+    for (let col = 0; col < 7; col++) {
+      const i = start + col
+      const info = infos[i]
+      if (info.highlight === 'none') continue
+
+      const prevHighlighted = col > 0 && infos[i - 1].highlight !== 'none'
+      const nextHighlighted = col < 6 && infos[i + 1].highlight !== 'none'
+
+      if (prevHighlighted && nextHighlighted) info.runPosition = 'middle'
+      else if (prevHighlighted) info.runPosition = 'end'
+      else if (nextHighlighted) info.runPosition = 'start'
+      else info.runPosition = 'solo'
+    }
+  }
+
+  return infos
+}
+
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 
 export function MonthCalendar({ year, month, selectedDate, onSelectDate }: MonthCalendarProps) {
   const data = useData()
   const today = useMemo(() => new Date().toISOString().slice(0, 10), [])
   const cells = useMemo(() => buildGrid(year, month), [year, month])
+  const cellInfos = useMemo(() => computeCellInfos(cells, data, today), [cells, data, today])
 
   return (
     <div className="w-full px-2">
@@ -82,14 +166,13 @@ export function MonthCalendar({ year, month, selectedDate, onSelectDate }: Month
 
       {/* Day cells */}
       <div className="grid grid-cols-7">
-        {cells.map((cell) => (
+        {cellInfos.map((info) => (
           <DayCellView
-            key={cell.date}
-            cell={cell}
-            data={data}
+            key={info.cell.date}
+            info={info}
             today={today}
-            isSelected={selectedDate === cell.date}
-            onSelect={() => onSelectDate(cell.date)}
+            isSelected={selectedDate === info.cell.date}
+            onSelect={() => onSelectDate(info.cell.date)}
           />
         ))}
       </div>
@@ -98,34 +181,58 @@ export function MonthCalendar({ year, month, selectedDate, onSelectDate }: Month
 }
 
 interface DayCellViewProps {
-  cell: DayCell
-  data: AppData
+  info: CellInfo
   today: string
   isSelected: boolean
   onSelect: () => void
 }
 
-function DayCellView({ cell, data, today, isSelected, onSelect }: DayCellViewProps) {
-  const resolved = useMemo(() => getAnnotationsForDate(data, cell.date), [data, cell.date])
-  const balance = useMemo(() => getBalanceOnDate(data, cell.date), [data, cell.date])
-  const belowReserve = balance !== null && balance < data.reserveHours
+function roundingClass(pos: RunPosition): string {
+  switch (pos) {
+    case 'solo':
+      return 'rounded-md'
+    case 'start':
+      return 'rounded-l-md'
+    case 'end':
+      return 'rounded-r-md'
+    case 'middle':
+      return ''
+    case 'none':
+      return 'rounded-md'
+  }
+}
 
+function highlightClass(level: HighlightLevel): string {
+  switch (level) {
+    case 'yellow':
+      return 'bg-yellow-100'
+    case 'red':
+      return 'bg-red-100'
+    case 'none':
+      return ''
+  }
+}
+
+function formatBalance(balance: number): string {
+  return balance % 1 === 0 ? String(balance) : balance.toFixed(1)
+}
+
+function DayCellView({ info, today, isSelected, onSelect }: DayCellViewProps) {
+  const { cell, balance, balanceChanged, highlight, runPosition } = info
   const isToday = cell.date === today
 
   return (
     <button
       onClick={onSelect}
-      className={`relative flex min-h-[44px] flex-col items-center justify-start gap-0.5 rounded-md py-1 text-sm transition-colors ${
+      className={`relative flex min-h-[44px] flex-col items-center justify-start gap-0.5 py-1 text-sm transition-colors ${
         !cell.inMonth ? 'text-muted-foreground/40' : ''
-      } ${isSelected ? 'bg-primary/10 ring-primary ring-1' : ''} ${
-        belowReserve && cell.inMonth ? 'bg-destructive/10' : ''
+      } ${isSelected ? 'ring-primary ring-1 ring-inset rounded-md' : ''} ${
+        highlight !== 'none' ? `${highlightClass(highlight)} ${roundingClass(runPosition)}` : ''
       }`}
     >
       <span
-        className={`text-xs leading-none ${
-          isToday
-            ? 'bg-primary text-primary-foreground inline-flex h-5 w-5 items-center justify-center rounded-full font-bold'
-            : ''
+        className={`flex h-5 w-5 items-center justify-center text-xs leading-none ${
+          isToday ? 'bg-primary text-primary-foreground rounded-full font-bold' : ''
         }`}
       >
         {cell.day}
@@ -133,24 +240,27 @@ function DayCellView({ cell, data, today, isSelected, onSelect }: DayCellViewPro
 
       {/* Annotation dots */}
       <div className="flex gap-0.5">
-        {resolved.payday && (
+        {info.hasPayday && (
           <span
             className={`h-1.5 w-1.5 rounded-full ${
-              resolved.payday.currentHours !== undefined
-                ? 'bg-green-500'
-                : 'border-green-500 border bg-transparent'
+              info.paydayAnchored ? 'bg-green-500' : 'border-green-500 border bg-transparent'
             }`}
           />
         )}
-        {resolved.timeoff && (
+        {info.hasTimeoff && (
           <span
-            className={`h-1.5 w-1.5 rounded-full ${
-              cell.date <= today ? 'bg-orange-500' : 'bg-blue-400'
-            }`}
+            className={`h-1.5 w-1.5 rounded-full ${info.timeoffPast ? 'bg-orange-500' : 'bg-blue-400'}`}
           />
         )}
-        {resolved.unpaid && <span className="bg-gray-400 h-1.5 w-1.5 rounded-full" />}
+        {info.hasUnpaid && <span className="bg-gray-400 h-1.5 w-1.5 rounded-full" />}
       </div>
+
+      {/* Balance change */}
+      {balanceChanged && balance !== null && (
+        <span className="text-muted-foreground text-[9px] leading-none">
+          {formatBalance(balance)}
+        </span>
+      )}
     </button>
   )
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DayPanel } from '@/components/DayPanel'
@@ -29,6 +29,10 @@ export function EventsView() {
     null,
   )
   const [formDate, setFormDate] = useState<string | null>(null)
+  const [scrollTarget, setScrollTarget] = useState<string | null>('today')
+
+  const todayRef = useRef<HTMLDivElement>(null)
+  const dateRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
   const today = new Date().toISOString().slice(0, 10)
 
@@ -39,7 +43,6 @@ export function EventsView() {
     return getAnnotatedDatesInRange(data, start, end)
   }, [data])
 
-  // Deduplicate: for range annotations, only show the start date
   const eventDates = useMemo(() => {
     const seen = new Set<string>()
     const result: string[] = []
@@ -53,11 +56,24 @@ export function EventsView() {
   }, [allDates])
 
   const pastDates = eventDates.filter((d) => d < today)
-  const upcomingDates = eventDates.filter((d) => d >= today)
+  const upcomingDates = eventDates.filter((d) => d > today)
+  // Scroll to target after render
+  useEffect(() => {
+    if (!scrollTarget) return
+
+    requestAnimationFrame(() => {
+      if (scrollTarget === 'today') {
+        todayRef.current?.scrollIntoView({ block: 'start' })
+      } else {
+        const el = dateRefs.current.get(scrollTarget)
+        el?.scrollIntoView({ block: 'start' })
+      }
+      setScrollTarget(null)
+    })
+  }, [scrollTarget])
 
   function handleSave(annotation: Annotation) {
     if (editTarget) {
-      // Editing existing annotation
       const original = editTarget.annotation
       if (original.type === 'payday' && annotation.type === 'payday') {
         updatePayday(annotation)
@@ -71,6 +87,9 @@ export function EventsView() {
     } else {
       addAnnotation(annotation)
     }
+    // Scroll to the date of the saved annotation
+    const savedDate = annotation.type === 'payday' ? annotation.date : annotation.startDate
+    setScrollTarget(savedDate === today ? 'today' : savedDate)
     setShowForm(false)
     setEditTarget(null)
   }
@@ -102,20 +121,6 @@ export function EventsView() {
     )
   }
 
-  if (eventDates.length === 0) {
-    return (
-      <div className="relative flex h-full min-h-[50dvh] items-center justify-center">
-        <p className="text-muted-foreground">No events yet. Tap + to add one.</p>
-        <AddButton
-          onClick={() => {
-            setEditTarget(null)
-            setShowForm(true)
-          }}
-        />
-      </div>
-    )
-  }
-
   return (
     <div className="relative w-full pb-20">
       {pastDates.length > 0 && (
@@ -126,12 +131,35 @@ export function EventsView() {
             </span>
           </div>
           {pastDates.map((date) => (
-            <div key={date} className="border-border border-b">
+            <div
+              key={date}
+              ref={(el) => {
+                if (el) dateRefs.current.set(date, el)
+              }}
+              className="border-border border-b"
+            >
               <DayPanel date={date} onAddAnnotation={handleAdd} onEditAnnotation={handleEdit} />
             </div>
           ))}
         </>
       )}
+
+      {/* Today — always visible */}
+      <div ref={todayRef}>
+        <div className="bg-muted/50 px-4 py-2">
+          <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+            Today
+          </span>
+        </div>
+        <div
+          ref={(el) => {
+            if (el) dateRefs.current.set(today, el)
+          }}
+          className="border-border border-b"
+        >
+          <DayPanel date={today} onAddAnnotation={handleAdd} onEditAnnotation={handleEdit} />
+        </div>
+      </div>
 
       {upcomingDates.length > 0 && (
         <>
@@ -141,7 +169,13 @@ export function EventsView() {
             </span>
           </div>
           {upcomingDates.map((date) => (
-            <div key={date} className="border-border border-b">
+            <div
+              key={date}
+              ref={(el) => {
+                if (el) dateRefs.current.set(date, el)
+              }}
+              className="border-border border-b"
+            >
               <DayPanel date={date} onAddAnnotation={handleAdd} onEditAnnotation={handleEdit} />
             </div>
           ))}
@@ -151,6 +185,7 @@ export function EventsView() {
       <AddButton
         onClick={() => {
           setEditTarget(null)
+          setFormDate(today)
           setShowForm(true)
         }}
       />

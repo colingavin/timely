@@ -1,8 +1,20 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import type { Annotation, AnnotationType } from '@/lib/types'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { useAppData } from '@/store/useAppData'
+import { getAnnotationsForDate } from '@/lib/pto'
+import type { Annotation, AnnotationType, AppData } from '@/lib/types'
 
 interface AnnotationFormProps {
   defaultDate: string
@@ -17,12 +29,24 @@ const TYPE_OPTIONS: { value: AnnotationType; label: string }[] = [
   { value: 'unpaid', label: 'Unpaid' },
 ]
 
+function useData(): AppData {
+  const version = useAppData((s) => s.version)
+  const reserveHours = useAppData((s) => s.reserveHours)
+  const workSchedule = useAppData((s) => s.workSchedule)
+  const annotations = useAppData((s) => s.annotations)
+  return useMemo(
+    () => ({ version, reserveHours, workSchedule, annotations }),
+    [version, reserveHours, workSchedule, annotations],
+  )
+}
+
 export function AnnotationForm({
   defaultDate,
   editingAnnotation,
   onSave,
   onCancel,
 }: AnnotationFormProps) {
+  const data = useData()
   const isEditing = !!editingAnnotation
 
   const [type, setType] = useState<AnnotationType>(editingAnnotation?.type ?? 'timeoff')
@@ -70,6 +94,8 @@ export function AnnotationForm({
   )
 
   const [error, setError] = useState<string | null>(null)
+  const [pendingAnnotation, setPendingAnnotation] = useState<Annotation | null>(null)
+  const [showReplaceDialog, setShowReplaceDialog] = useState(false)
 
   const isRange = type !== 'payday'
   const isMultiDay = isRange && startDate !== endDate
@@ -84,7 +110,7 @@ export function AnnotationForm({
 
     switch (type) {
       case 'timeoff': {
-        if (duration === 'partial') {
+        if (duration === 'partial' && !isMultiDay) {
           const hrs = parseFloat(partialHours)
           if (isNaN(hrs) || hrs <= 0) {
             setError('Enter a positive number of hours.')
@@ -117,78 +143,106 @@ export function AnnotationForm({
     }
   }
 
+  function checkForConflict(annotation: Annotation): boolean {
+    if (isEditing) return false // editing doesn't conflict with itself
+
+    const dateToCheck = annotation.type === 'payday' ? annotation.date : annotation.startDate
+    const resolved = getAnnotationsForDate(data, dateToCheck)
+
+    if (annotation.type === 'payday' && resolved.payday) return true
+    if (annotation.type === 'timeoff' && resolved.timeoff) return true
+    if (annotation.type === 'unpaid' && resolved.unpaid) return true
+
+    return false
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const annotation = validate()
-    if (annotation) onSave(annotation)
+    if (!annotation) return
+
+    if (checkForConflict(annotation)) {
+      setPendingAnnotation(annotation)
+      setShowReplaceDialog(true)
+    } else {
+      onSave(annotation)
+    }
+  }
+
+  function confirmReplace() {
+    if (pendingAnnotation) onSave(pendingAnnotation)
+    setPendingAnnotation(null)
+    setShowReplaceDialog(false)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
-      <h2 className="text-base font-medium">{isEditing ? 'Edit Annotation' : 'Add Annotation'}</h2>
+    <>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
+        <h2 className="text-base font-medium">
+          {isEditing ? 'Edit Annotation' : 'Add Annotation'}
+        </h2>
 
-      {/* Annotation Type */}
-      <div className="flex flex-col gap-1.5">
-        <Label>Type</Label>
-        <div className="flex gap-1">
-          {TYPE_OPTIONS.map((opt) => (
-            <Button
-              key={opt.value}
-              type="button"
-              variant={type === opt.value ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1"
-              disabled={isEditing}
-              onClick={() => setType(opt.value)}
-            >
-              {opt.label}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Date */}
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="start-date">{isRange ? 'Start Date' : 'Date'}</Label>
-        <Input
-          id="start-date"
-          type="date"
-          value={startDate}
-          onChange={(e) => {
-            setStartDate(e.target.value)
-            if (!isRange || endDate < e.target.value) setEndDate(e.target.value)
-          }}
-        />
-      </div>
-
-      {isRange && (
+        {/* Annotation Type */}
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="end-date">End Date</Label>
+          <Label>Type</Label>
+          <div className="flex gap-1">
+            {TYPE_OPTIONS.map((opt) => (
+              <Button
+                key={opt.value}
+                type="button"
+                variant={type === opt.value ? 'default' : 'outline'}
+                size="sm"
+                className="flex-1"
+                disabled={isEditing}
+                onClick={() => setType(opt.value)}
+              >
+                {opt.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Date */}
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="start-date">{isRange ? 'Start Date' : 'Date'}</Label>
           <Input
-            id="end-date"
+            id="start-date"
             type="date"
-            value={endDate}
-            min={startDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            value={startDate}
+            onChange={(e) => {
+              setStartDate(e.target.value)
+              if (!isRange || endDate < e.target.value) setEndDate(e.target.value)
+            }}
           />
         </div>
-      )}
 
-      {/* Type-specific fields */}
-      {type === 'timeoff' && (
-        <div className="flex flex-col gap-2">
-          <Label>Duration</Label>
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-1.5 text-sm">
-              <input
-                type="radio"
-                name="duration"
-                checked={duration === 'full'}
-                onChange={() => setDuration('full')}
-              />
-              Full day
-            </label>
-            {!isMultiDay && (
+        {isRange && (
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="end-date">End Date</Label>
+            <Input
+              id="end-date"
+              type="date"
+              value={endDate}
+              min={startDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+        )}
+
+        {/* Type-specific fields */}
+        {type === 'timeoff' && !isMultiDay && (
+          <div className="flex flex-col gap-2">
+            <Label>Duration</Label>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1.5 text-sm">
+                <input
+                  type="radio"
+                  name="duration"
+                  checked={duration === 'full'}
+                  onChange={() => setDuration('full')}
+                />
+                Full day
+              </label>
               <label className="flex items-center gap-1.5 text-sm">
                 <input
                   type="radio"
@@ -198,74 +252,90 @@ export function AnnotationForm({
                 />
                 Partial
               </label>
+            </div>
+            {duration === 'partial' && (
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={0}
+                  step="any"
+                  placeholder="Hours"
+                  value={partialHours}
+                  onChange={(e) => setPartialHours(e.target.value)}
+                  className="w-24"
+                />
+                <span className="text-muted-foreground text-sm">hrs</span>
+              </div>
             )}
           </div>
-          {duration === 'partial' && !isMultiDay && (
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min={0}
-                step="any"
-                placeholder="Hours"
-                value={partialHours}
-                onChange={(e) => setPartialHours(e.target.value)}
-                className="w-24"
-              />
-              <span className="text-muted-foreground text-sm">hrs</span>
-            </div>
-          )}
-        </div>
-      )}
+        )}
 
-      {type === 'payday' && (
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="hours-accrued">Hours accrued this period</Label>
-            <Input
-              id="hours-accrued"
-              type="number"
-              min={0}
-              step="any"
-              placeholder="e.g. 4"
-              value={hoursAccrued}
-              onChange={(e) => setHoursAccrued(e.target.value)}
-              className="w-32"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={anchorEnabled}
-                onChange={(e) => setAnchorEnabled(e.target.checked)}
-              />
-              Set current balance
-            </label>
-            {anchorEnabled && (
+        {type === 'payday' && (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="hours-accrued">Hours accrued this period</Label>
               <Input
+                id="hours-accrued"
                 type="number"
                 min={0}
                 step="any"
-                placeholder="Current PTO balance"
-                value={currentHours}
-                onChange={(e) => setCurrentHours(e.target.value)}
+                placeholder="e.g. 4"
+                value={hoursAccrued}
+                onChange={(e) => setHoursAccrued(e.target.value)}
                 className="w-32"
               />
-            )}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={anchorEnabled}
+                  onChange={(e) => setAnchorEnabled(e.target.checked)}
+                />
+                Set current balance
+              </label>
+              {anchorEnabled && (
+                <Input
+                  type="number"
+                  min={0}
+                  step="any"
+                  placeholder="Current PTO balance"
+                  value={currentHours}
+                  onChange={(e) => setCurrentHours(e.target.value)}
+                  className="w-32"
+                />
+              )}
+            </div>
           </div>
+        )}
+
+        {error && <p className="text-destructive text-sm">{error}</p>}
+
+        <div className="flex gap-2">
+          <Button type="submit" className="flex-1">
+            Save
+          </Button>
+          <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
+            Cancel
+          </Button>
         </div>
-      )}
+      </form>
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
-
-      <div className="flex gap-2">
-        <Button type="submit" className="flex-1">
-          Save
-        </Button>
-        <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
-    </form>
+      {/* Replace confirmation dialog */}
+      <AlertDialog open={showReplaceDialog} onOpenChange={setShowReplaceDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace existing annotation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              An annotation of this type already exists on this date. Saving will replace it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingAnnotation(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmReplace}>Replace</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

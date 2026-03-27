@@ -45,6 +45,7 @@ export function CalendarView() {
   const monthRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
   const [visibleMonth, setVisibleMonth] = useState(MONTHS_BEFORE)
+  const visibleMonthRef = useRef(MONTHS_BEFORE)
   const [selectedDate, setSelectedDate] = useState<string | null>(
     new Date().toISOString().slice(0, 10),
   )
@@ -89,14 +90,23 @@ export function CalendarView() {
 
     const observer = new IntersectionObserver(
       (entries) => {
+        let bestIdx = -1
+        let bestRatio = 0
         for (const entry of entries) {
-          if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
+          if (entry.isIntersecting && entry.intersectionRatio > bestRatio) {
             const idx = months.findIndex((m) => m.key === entry.target.getAttribute('data-month'))
-            if (idx !== -1) setVisibleMonth(idx)
+            if (idx !== -1) {
+              bestIdx = idx
+              bestRatio = entry.intersectionRatio
+            }
           }
         }
+        if (bestIdx !== -1) {
+          setVisibleMonth(bestIdx)
+          visibleMonthRef.current = bestIdx
+        }
       },
-      { root: container, threshold: 0.3 },
+      { root: container, threshold: [0.1, 0.3, 0.5, 0.7] },
     )
 
     for (const el of monthRefs.current.values()) {
@@ -191,7 +201,7 @@ export function CalendarView() {
           variant="ghost"
           size="icon"
           className="h-9 w-9"
-          onClick={() => scrollToMonth(visibleMonth - 1)}
+          onClick={() => scrollToMonth(visibleMonthRef.current - 1)}
         >
           <ChevronLeft className="h-5 w-5" />
         </Button>
@@ -205,7 +215,7 @@ export function CalendarView() {
           variant="ghost"
           size="icon"
           className="h-9 w-9"
-          onClick={() => scrollToMonth(visibleMonth + 1)}
+          onClick={() => scrollToMonth(visibleMonthRef.current + 1)}
         >
           <ChevronRight className="h-5 w-5" />
         </Button>
