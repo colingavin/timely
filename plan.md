@@ -87,12 +87,12 @@ All functions implemented in `src/lib/pto.ts` as pure functions. Tests in `src/l
 
 ## Phase 4: State Store
 
-- [ ] Implement `src/store/useAppData.ts` Zustand store:
+- [x] Implement `src/store/useAppData.ts` Zustand store:
   - Holds `AppData`; initialises from `localStorage` (key `timely_data`); persists on every mutation
   - Default value: `{ version: 1, reserveHours: 0, workSchedule: { mon–fri: 8, sat–sun: 0 }, annotations: [] }`
   - Exposes mutation actions wrapping the business logic functions from Phase 3
   - Exposes `exportJSON()` (returns serialised `AppData`) and `importJSON(json)` (validates and replaces data)
-- [ ] Write a basic smoke test: store initialises with defaults; a mutation persists to localStorage and survives a store re-initialisation
+- [x] Write a basic smoke test: store initialises with defaults; a mutation persists to localStorage and survives a store re-initialisation
 
 ---
 
