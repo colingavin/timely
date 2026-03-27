@@ -15,10 +15,10 @@
 
 ## Phase 2: Data Types
 
-- [ ] Define `WorkSchedule`, `PaydayAnnotation`, `TimeOffAnnotation`, `UnpaidAnnotation`, `Annotation`, and `AppData` types in `src/lib/types.ts`
-- [ ] Define `ResolvedDayAnnotations` type (expanded annotations for a single date, used as the return type of `getAnnotationsForDate`)
-- [ ] Define `RangeEditMode` type (`'replace' | 'split'`)
-- [ ] Export all types from a barrel `src/lib/index.ts`
+- [x] Define `WorkSchedule`, `PaydayAnnotation`, `TimeOffAnnotation`, `UnpaidAnnotation`, `Annotation`, and `AppData` types in `src/lib/types.ts`
+- [x] Define `ResolvedDayAnnotations` type (expanded annotations for a single date, used as the return type of `getAnnotationsForDate`)
+- [x] Define `RangeEditMode` type (`'replace' | 'split'`)
+- [x] Export all types from a barrel `src/lib/index.ts` — skipped; types exported directly from `src/lib/types.ts`
 
 ---
 
