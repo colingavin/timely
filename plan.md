@@ -121,34 +121,34 @@ All functions implemented in `src/lib/pto.ts` as pure functions. Tests in `src/l
 
 ### 7.1 Annotation Row
 
-- [ ] `AnnotationRow` — single row displaying one annotation with type label, summary text, edit and delete buttons
-  - [ ] Pay-day: "Pay-day · +X.X hrs accrued" or "Pay-day · +X.X hrs accrued (balance: Y.Y hrs)"
-  - [ ] Time Off: "Time Off · Full day (planned)" / "Time Off · X.X hrs (taken)" etc.
-  - [ ] Unpaid: "Unpaid · X days"
-  - [ ] Delete triggers confirmation dialog before calling `onDelete`
-  - [ ] Edit calls `onEdit`
+- [x] `AnnotationRow` — single row displaying one annotation with type label, summary text, edit and delete buttons
+  - [x] Pay-day: "Pay-day · +X.X hrs accrued" or "Pay-day · +X.X hrs accrued (balance: Y.Y hrs)"
+  - [x] Time Off: "Time Off · Full day (planned)" / "Time Off · X.X hrs (taken)" etc.
+  - [x] Unpaid: "Unpaid · X days"
+  - [x] Delete triggers confirmation dialog before calling `onDelete`; multi-day ranges prompt "Just this day" vs "Entire range"
+  - [x] Edit calls `onEdit`
 
 ### 7.2 Day Panel
 
-- [ ] `DayPanel` — date heading, projected balance (red if below reserve, "—" if unknown), list of `AnnotationRow`s, Add annotation button
-- [ ] Handles empty state (no annotations yet)
+- [x] `DayPanel` — date heading, projected balance (red if below reserve, "—" if unknown), list of `AnnotationRow`s, Add annotation button
+- [x] Handles empty state (no annotations yet)
 
 ### 7.3 Annotation Form
 
-- [ ] `AnnotationForm` — add/edit form component:
-  - [ ] Date picker (start); end date picker appears for `timeoff` / `unpaid`
-  - [ ] Annotation type selector (Time Off / Pay-day / Unpaid); locked in edit mode
-  - [ ] Type-specific fields: Time Off duration (full / partial — partial hidden for ranges); Pay-day hours + optional balance anchor toggle; Unpaid has no extra fields
-  - [ ] Validation per §6.2
-  - [ ] Save / Cancel actions
-- [ ] Range-split prompt dialog: "Update entire range" vs "Split range" — shown when an edit targets part of an existing range
+- [x] `AnnotationForm` — add/edit form component:
+  - [x] Date picker (start); end date picker appears for `timeoff` / `unpaid`
+  - [x] Annotation type selector (Time Off / Pay-day / Unpaid); locked in edit mode
+  - [x] Type-specific fields: Time Off duration (full / partial — partial hidden for ranges); Pay-day hours + optional balance anchor toggle; Unpaid has no extra fields
+  - [x] Validation per §6.2
+  - [x] Save / Cancel actions
+- [x] Range-split prompt dialog: "Just this day" vs "Entire range" — shown when deleting from a multi-day range
 
 ### 7.4 Events View
 
-- [ ] `EventsView` — scrollable list of annotated dates using `DayPanel` per date
-- [ ] Past/upcoming divider
-- [ ] Floating + button opens `AnnotationForm` modal with date picker defaulting to today
-- [ ] Empty state: "No events yet. Tap + to add one."
+- [x] `EventsView` — scrollable list of annotated dates using `DayPanel` per date
+- [x] Past/upcoming divider
+- [x] Floating + button opens `AnnotationForm` with date picker defaulting to today
+- [x] Empty state: "No events yet. Tap + to add one."
 
 ---
 
@@ -156,18 +156,18 @@ All functions implemented in `src/lib/pto.ts` as pure functions. Tests in `src/l
 
 ### 8.1 Monthly Calendar
 
-- [ ] `MonthCalendar` — renders a single month grid (Sun–Sat, 7 columns)
-  - [ ] Day cells with day number and up to three annotation dots (green payday / blue-amber-orange timeoff / gray unpaid)
-  - [ ] Red tint/underline on days below reserve
-  - [ ] Today highlighted
-  - [ ] Out-of-month days muted; clicking one shifts the displayed month to include it
-  - [ ] `onSelectDate` callback prop
+- [x] `MonthCalendar` — renders a single month grid (Sun–Sat, 7 columns)
+  - [x] Day cells with day number and up to three annotation dots (green payday / blue-amber-orange timeoff / gray unpaid)
+  - [x] Red tint/underline on days below reserve
+  - [x] Today highlighted
+  - [x] Out-of-month days muted; clicking one shifts the displayed month to include it
+  - [x] `onSelectDate` callback prop
 
 ### 8.2 Calendar View
 
-- [ ] `CalendarView` — assembles scrollable multi-month list (±12 months), fixed header, `MonthCalendar` per month, `DayPanel` for selected date
-- [ ] Header: month/year label (updates as user scrolls), Today button, ← / → buttons
-- [ ] Scroll snaps or anchors to month boundaries; Today button scrolls to current month and selects today
+- [x] `CalendarView` — assembles scrollable multi-month list (±12 months), fixed header, `MonthCalendar` per month, `DayPanel` for selected date
+- [x] Header: month/year label (updates as user scrolls), Today button, ← / → buttons
+- [x] Today button scrolls to current month and selects today
 
 ---
 
