@@ -174,8 +174,12 @@ export function SettingsView() {
             Download backup
           </Button>
 
-          <div>
-            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+          <div className="flex flex-col">
+            <Button
+              className="grow"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+            >
               Restore backup
             </Button>
             <input
