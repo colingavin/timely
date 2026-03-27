@@ -41,6 +41,7 @@ export function SettingsView() {
   const [importError, setImportError] = useState<string | null>(null)
   const [showImportConfirm, setShowImportConfirm] = useState(false)
   const [pendingImport, setPendingImport] = useState<string | null>(null)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
 
   function handleExport() {
     const json = exportJSON()
@@ -192,7 +193,7 @@ export function SettingsView() {
             {importError && <p className="text-destructive mt-2 text-sm">{importError}</p>}
           </div>
 
-          <AlertDialog>
+          <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
             <AlertDialogTrigger render={<Button variant="destructive" />}>
               Clear all data
             </AlertDialogTrigger>
@@ -206,7 +207,14 @@ export function SettingsView() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={clearAll}>Clear everything</AlertDialogAction>
+                <AlertDialogAction
+                  onClick={() => {
+                    clearAll()
+                    setShowClearConfirm(false)
+                  }}
+                >
+                  Clear everything
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
