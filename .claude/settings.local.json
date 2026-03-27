@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(export PATH=\"/Users/colin/.nvm/versions/node/v25.8.2/bin:$PATH\")",
-      "Bash(npx shadcn@latest init --defaults)"
+      "Bash(npx shadcn@latest init --defaults)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)"
     ]
   }
 }

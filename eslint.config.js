@@ -20,4 +20,12 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  // shadcn-generated UI components export both components and constants (e.g. buttonVariants).
+  // The react-refresh rule incorrectly flags these, so we disable it for that directory.
+  {
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

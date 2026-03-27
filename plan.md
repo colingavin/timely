@@ -2,14 +2,14 @@
 
 ## Phase 1: Project Scaffold
 
-- [ ] Initialise Vite + React + TypeScript project (`npm create vite@latest`)
-- [ ] Configure TypeScript strict mode in `tsconfig.json`
-- [ ] Install and configure Tailwind CSS
-- [ ] Install and initialise shadcn/ui (`npx shadcn@latest init`)
-- [ ] Install Vitest and configure `vite.config.ts` for unit tests
-- [ ] Install Zustand
-- [ ] Add `index.html` viewport meta tag for mobile layout
-- [ ] Verify dev server, build, and test runner all work with a hello-world component
+- [x] Initialise Vite + React + TypeScript project (`npm create vite@latest`)
+- [x] Configure TypeScript strict mode in `tsconfig.json`
+- [x] Install and configure Tailwind CSS
+- [x] Install and initialise shadcn/ui (`npx shadcn@latest init`)
+- [x] Install Vitest and configure `vite.config.ts` for unit tests
+- [x] Install Zustand
+- [x] Add `index.html` viewport meta tag for mobile layout
+- [x] Verify dev server, build, and test runner all work with a hello-world component
 
 ---
 
@@ -27,16 +27,19 @@
 All functions implemented in `src/lib/pto.ts` as pure functions. Tests in `src/lib/pto.test.ts`.
 
 ### 3.1 Work Schedule Helpers
+
 - [ ] `getScheduledHours(schedule, date)` — returns scheduled hours for the weekday of `date`
 - [ ] `getScheduledHoursInRange(schedule, start, end)` — sum of scheduled hours over a date range
 - [ ] Tests: hours vary by weekday; non-work days return 0; multi-week ranges sum correctly
 
 ### 3.2 Annotation Queries
+
 - [ ] `getAnnotationsForDate(data, date)` — returns all annotations (expanding ranges) that apply to a date
 - [ ] `getAnnotatedDatesInRange(data, start, end)` — returns sorted list of dates with at least one annotation
 - [ ] Tests: single-day, multi-day ranges, date on boundary, date outside all ranges
 
 ### 3.3 Balance Computation
+
 - [ ] `getBalanceOnDate(data, date)` — implements the §2.5 algorithm:
   - Find most recent anchoring Pay-day on or before `date`
   - Walk forward day by day, applying Pay-day accrual (before same-day Time Off), Time Off deductions, and tracking unpaid hours
@@ -57,10 +60,12 @@ All functions implemented in `src/lib/pto.ts` as pure functions. Tests in `src/l
   - [ ] `getBalanceRange` produces consistent results with repeated `getBalanceOnDate` calls
 
 ### 3.4 Reserve
+
 - [ ] `getDatesBelowReserve(data, start, end)` — returns dates where projected balance < `reserveHours`
 - [ ] Tests: reserve = 0, reserve > 0, dates straddling threshold
 
 ### 3.5 Mutations
+
 - [ ] `addAnnotation(data, annotation)` — appends to `annotations[]`; throws if a Pay-day already exists on that date
 - [ ] `updatePaydayAnnotation(data, updated)` — replaces the Pay-day matching `updated.date`
 - [ ] `removePaydayAnnotation(data, date)` — removes Pay-day with matching date
@@ -94,9 +99,11 @@ All functions implemented in `src/lib/pto.ts` as pure functions. Tests in `src/l
 ## Phase 5: Core Components
 
 ### 5.1 Bottom Navigation
+
 - [ ] `BottomNav` — three-tab bar (Calendar, Events, Settings); highlights active tab; fixed to bottom of viewport
 
 ### 5.2 Monthly Calendar
+
 - [ ] `MonthCalendar` — renders a single month grid (Sun–Sat, 7 columns)
   - [ ] Day cells with day number and up to three annotation dots (green payday / blue-amber-orange timeoff / gray unpaid)
   - [ ] Red tint/underline on days below reserve
@@ -105,6 +112,7 @@ All functions implemented in `src/lib/pto.ts` as pure functions. Tests in `src/l
   - [ ] `onSelectDate` callback prop
 
 ### 5.3 Annotation Row
+
 - [ ] `AnnotationRow` — single row displaying one annotation with type label, summary text, edit and delete buttons
   - [ ] Pay-day: "Pay-day · +X.X hrs accrued" or "Pay-day · +X.X hrs accrued (balance: Y.Y hrs)"
   - [ ] Time Off: "Time Off · Full day (planned)" / "Time Off · X.X hrs (taken)" etc.
@@ -113,10 +121,12 @@ All functions implemented in `src/lib/pto.ts` as pure functions. Tests in `src/l
   - [ ] Edit calls `onEdit`
 
 ### 5.4 Day Panel
+
 - [ ] `DayPanel` — date heading, projected balance (red if below reserve, "—" if unknown), list of `AnnotationRow`s, Add annotation button
 - [ ] Handles empty state (no annotations yet)
 
 ### 5.5 Annotation Form
+
 - [ ] `AnnotationForm` — add/edit form component:
   - [ ] Date picker (start); end date picker appears for `timeoff` / `unpaid`
   - [ ] Annotation type selector (Time Off / Pay-day / Unpaid); locked in edit mode
@@ -130,17 +140,20 @@ All functions implemented in `src/lib/pto.ts` as pure functions. Tests in `src/l
 ## Phase 6: Views
 
 ### 6.1 Calendar View
+
 - [ ] `CalendarView` — assembles scrollable multi-month list (±12 months), fixed header, `MonthCalendar` per month, `DayPanel` for selected date
 - [ ] Header: month/year label (updates as user scrolls), Today button, ← / → buttons
 - [ ] Scroll snaps or anchors to month boundaries; Today button scrolls to current month and selects today
 
 ### 6.2 Events View
+
 - [ ] `EventsView` — scrollable list of annotated dates using `DayPanel` per date
 - [ ] Past/upcoming divider
 - [ ] Floating + button opens `AnnotationForm` modal with date picker defaulting to today
 - [ ] Empty state: "No events yet. Tap + to add one."
 
 ### 6.3 Settings View
+
 - [ ] `SettingsView`:
   - [ ] Reserve PTO numeric input (saves on blur)
   - [ ] Work schedule table — one row per day of week, hours input per row
