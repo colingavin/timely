@@ -3,8 +3,10 @@ import { BottomNav, type Tab } from '@/components/BottomNav'
 import { CalendarView } from '@/views/CalendarView'
 import { EventsView } from '@/views/EventsView'
 import { SettingsView } from '@/views/SettingsView'
+import { useThemeEffect } from '@/store/useTheme'
 
 export default function App() {
+  useThemeEffect()
   const [tab, setTab] = useState<Tab>('calendar')
 
   return (

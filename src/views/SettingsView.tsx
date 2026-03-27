@@ -16,7 +16,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { useThemeStore, type ThemeMode } from '@/store/useTheme'
 import type { WorkSchedule } from '@/lib/types'
+
+const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'system', label: 'System' },
+]
 
 const DAYS: { key: keyof WorkSchedule; label: string }[] = [
   { key: 'monday', label: 'Mon' },
@@ -36,6 +43,9 @@ export function SettingsView() {
   const exportJSON = useAppData((s) => s.exportJSON)
   const importJSON = useAppData((s) => s.importJSON)
   const clearAll = useAppData((s) => s.clearAll)
+
+  const themeMode = useThemeStore((s) => s.mode)
+  const setThemeMode = useThemeStore((s) => s.setMode)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importError, setImportError] = useState<string | null>(null)
@@ -101,6 +111,28 @@ export function SettingsView() {
   return (
     <div className="flex w-full flex-col gap-6 p-4 pb-8">
       <h1 className="text-xl font-semibold">Settings</h1>
+
+      {/* Theme */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Appearance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-1">
+            {THEME_OPTIONS.map((opt) => (
+              <Button
+                key={opt.value}
+                variant={themeMode === opt.value ? 'default' : 'outline'}
+                size="sm"
+                className="flex-1"
+                onClick={() => setThemeMode(opt.value)}
+              >
+                {opt.label}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Reserve PTO */}
       <Card>
