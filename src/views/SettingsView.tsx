@@ -114,6 +114,7 @@ export function SettingsView() {
             <Input
               id="reserve"
               type="number"
+              inputMode="decimal"
               min={0}
               step="any"
               defaultValue={reserveHours}
@@ -145,6 +146,7 @@ export function SettingsView() {
                 <Input
                   id={`schedule-${key}`}
                   type="number"
+                  inputMode="decimal"
                   min={0}
                   step="any"
                   defaultValue={workSchedule[key]}

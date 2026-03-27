@@ -323,6 +323,7 @@ export function AnnotationForm({
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
+                  inputMode="decimal"
                   min={0}
                   step="any"
                   placeholder="Hours"
@@ -351,6 +352,7 @@ export function AnnotationForm({
                 <div className="flex items-center gap-2 pl-6">
                   <Input
                     type="number"
+                    inputMode="decimal"
                     min={0}
                     step="any"
                     placeholder="Hours"
@@ -375,6 +377,7 @@ export function AnnotationForm({
                 <div className="flex items-center gap-2 pl-6">
                   <Input
                     type="number"
+                    inputMode="decimal"
                     min={0}
                     step="any"
                     placeholder="Hours"
@@ -396,6 +399,7 @@ export function AnnotationForm({
               <Input
                 id="hours-accrued"
                 type="number"
+                inputMode="decimal"
                 min={0}
                 step="any"
                 placeholder="e.g. 4"
@@ -416,6 +420,7 @@ export function AnnotationForm({
               {anchorEnabled && (
                 <Input
                   type="number"
+                  inputMode="decimal"
                   min={0}
                   step="any"
                   placeholder="Current PTO balance"
