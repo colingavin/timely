@@ -253,6 +253,8 @@ export function SettingsView() {
         </CardContent>
       </Card>
 
+      <p className="text-muted-foreground/50 text-center text-xs">Build {__GIT_COMMIT__}</p>
+
       {/* Import confirmation dialog */}
       <AlertDialog open={showImportConfirm} onOpenChange={setShowImportConfirm}>
         <AlertDialogContent>
