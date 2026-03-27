@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { MonthCalendar } from '@/components/MonthCalendar'
+import { MonthPicker } from '@/components/MonthPicker'
 import { DayPanel } from '@/components/DayPanel'
 import { AnnotationForm } from '@/components/AnnotationForm'
 import { useAppData } from '@/store/useAppData'
@@ -215,9 +216,9 @@ export function CalendarView() {
         >
           <ChevronLeft className="h-5 w-5" />
         </Button>
-        <span className="text-right text-sm font-medium pr-2">
+        <MonthPicker months={months} currentIndex={visibleMonth} onSelect={scrollToMonth}>
           {monthLabel(current.year, current.month)}
-        </span>
+        </MonthPicker>
         <div className="pl-2">
           <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleToday}>
             Today
