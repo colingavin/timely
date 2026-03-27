@@ -18,17 +18,17 @@ PTO accrues on a biweekly basis. Each pay period ends on a "Pay-day" date. The a
 
 ### 2.3 Work Schedule
 
-The user is assumed to have a fixed weekly work schedule with a set number of hours on each work day. 
+The user is assumed to have a fixed weekly work schedule with a set number of hours on each work day.
 
 ### 2.4 Annotations
 
 An annotation is a piece of data attached to a specific calendar date. Each date may carry **at most one** annotation of each type. The three annotation types are:
 
-| Type | Description |
-|---|---|
-| **Pay-day** | Marks the end of a pay period. Includes the hours accrued this period and establishes the accrual rate going forward. Optionally allows the user to anchor current accured time off. |
-| **Time Off** | Marks a partial or full day of PTO usage. Can span a date range. Future dates are "planned"; past dates are "taken". |
-| **Unpaid** | Marks a day (or range) as unpaid leave — no PTO is used, and PTO does not accrue on these days. |
+| Type         | Description                                                                                                                                                                          |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Pay-day**  | Marks the end of a pay period. Includes the hours accrued this period and establishes the accrual rate going forward. Optionally allows the user to anchor current accured time off. |
+| **Time Off** | Marks a partial or full day of PTO usage. Can span a date range. Future dates are "planned"; past dates are "taken".                                                                 |
+| **Unpaid**   | Marks a day (or range) as unpaid leave — no PTO is used, and PTO does not accrue on these days.                                                                                      |
 
 ### 2.5 Balance Computation Algorithm
 
@@ -55,46 +55,46 @@ The user may configure a reserve amount (in hours). The reserve is a floor the u
 All data is stored as a single JSON object in `localStorage` under the key `timely_data`.
 
 ```ts
-type AnnotationType = 'payday' | 'timeoff' | 'unpaid';
+type AnnotationType = 'payday' | 'timeoff' | 'unpaid'
 
 interface WorkSchedule {
-  monday: number;     // scheduled work hours (0 = not a work day)
-  tuesday: number;
-  wednesday: number;
-  thursday: number;
-  friday: number;
-  saturday: number;
-  sunday: number;
+  monday: number // scheduled work hours (0 = not a work day)
+  tuesday: number
+  wednesday: number
+  thursday: number
+  friday: number
+  saturday: number
+  sunday: number
 }
 
 interface PaydayAnnotation {
-  type: 'payday';
-  date: string;               // ISO 8601 date string (YYYY-MM-DD)
-  hoursAccrued: number;       // Hours accrued this pay period (>= 0)
-  currentHours?: number;      // Optional balance anchor: exact PTO balance as of this date (>= 0)
+  type: 'payday'
+  date: string // ISO 8601 date string (YYYY-MM-DD)
+  hoursAccrued: number // Hours accrued this pay period (>= 0)
+  currentHours?: number // Optional balance anchor: exact PTO balance as of this date (>= 0)
 }
 
 interface TimeOffAnnotation {
-  type: 'timeoff';
-  startDate: string;          // ISO 8601 date string (YYYY-MM-DD)
-  endDate: string;            // ISO 8601 date string; equal to startDate for single day
-  hours: number | 'full';     // 'full' = scheduled hours per day from work schedule
-                              // number only valid when startDate === endDate (single day)
+  type: 'timeoff'
+  startDate: string // ISO 8601 date string (YYYY-MM-DD)
+  endDate: string // ISO 8601 date string; equal to startDate for single day
+  hours: number | 'full' // 'full' = scheduled hours per day from work schedule
+  // number only valid when startDate === endDate (single day)
 }
 
 interface UnpaidAnnotation {
-  type: 'unpaid';
-  startDate: string;
-  endDate: string;
+  type: 'unpaid'
+  startDate: string
+  endDate: string
 }
 
-type Annotation = PaydayAnnotation | TimeOffAnnotation | UnpaidAnnotation;
+type Annotation = PaydayAnnotation | TimeOffAnnotation | UnpaidAnnotation
 
 interface AppData {
-  version: 1;
-  reserveHours: number;           // default 0
-  workSchedule: WorkSchedule;     // default: Mon–Fri 8hrs, Sat–Sun 0hrs
-  annotations: Annotation[];
+  version: 1
+  reserveHours: number // default 0
+  workSchedule: WorkSchedule // default: Mon–Fri 8hrs, Sat–Sun 0hrs
+  annotations: Annotation[]
 }
 ```
 
@@ -110,26 +110,26 @@ The business logic must be implemented in a separate module (e.g., `src/lib/pto.
 
 ```ts
 // Returns projected PTO balance on a given date, or null if unknown.
-function getBalanceOnDate(data: AppData, date: string): number | null;
+function getBalanceOnDate(data: AppData, date: string): number | null
 
 // Returns a map of date -> projected balance for all dates in [start, end].
-function getBalanceRange(data: AppData, start: string, end: string): Map<string, number | null>;
+function getBalanceRange(data: AppData, start: string, end: string): Map<string, number | null>
 
 // Returns all annotations (expanded) that apply to a given date.
-function getAnnotationsForDate(data: AppData, date: string): ResolvedDayAnnotations;
+function getAnnotationsForDate(data: AppData, date: string): ResolvedDayAnnotations
 
 // Returns all dates in a range that have at least one annotation.
-function getAnnotatedDatesInRange(data: AppData, start: string, end: string): string[];
+function getAnnotatedDatesInRange(data: AppData, start: string, end: string): string[]
 
 // Returns all dates where projected balance < reserveHours.
-function getDatesBelowReserve(data: AppData, start: string, end: string): string[];
+function getDatesBelowReserve(data: AppData, start: string, end: string): string[]
 
 // Returns scheduled work hours for a given date per the work schedule.
-function getScheduledHours(schedule: WorkSchedule, date: string): number;
+function getScheduledHours(schedule: WorkSchedule, date: string): number
 
 // Adds a new annotation; returns updated AppData.
 // Throws if a payday annotation already exists on that date (caller must remove first).
-function addAnnotation(data: AppData, annotation: Annotation): AppData;
+function addAnnotation(data: AppData, annotation: Annotation): AppData
 
 // Updates an existing range annotation. `rangeEdit` controls behavior when the edit
 // affects only part of a range: 'replace' replaces the whole range, 'split' splits it
@@ -138,14 +138,14 @@ function updateRangeAnnotation(
   data: AppData,
   original: TimeOffAnnotation | UnpaidAnnotation,
   updated: TimeOffAnnotation | UnpaidAnnotation,
-  rangeEdit: 'replace' | 'split'
-): AppData;
+  rangeEdit: 'replace' | 'split',
+): AppData
 
 // Updates an existing payday annotation in place; returns updated AppData.
-function updatePaydayAnnotation(data: AppData, updated: PaydayAnnotation): AppData;
+function updatePaydayAnnotation(data: AppData, updated: PaydayAnnotation): AppData
 
 // Removes a payday annotation by date; returns updated AppData.
-function removePaydayAnnotation(data: AppData, date: string): AppData;
+function removePaydayAnnotation(data: AppData, date: string): AppData
 
 // Removes a range annotation. `rangeEdit` controls behavior when only part of the range
 // is being removed: 'replace' removes the entire range, 'split' removes only the
@@ -155,8 +155,8 @@ function removeRangeAnnotation(
   annotation: TimeOffAnnotation | UnpaidAnnotation,
   removeStart: string,
   removeEnd: string,
-  rangeEdit: 'replace' | 'split'
-): AppData;
+  rangeEdit: 'replace' | 'split',
+): AppData
 ```
 
 ### 4.2 Unit Test Coverage Requirements
@@ -182,6 +182,7 @@ function removeRangeAnnotation(
 ### 5.1 Navigation
 
 The app has a bottom navigation bar with three tabs:
+
 - **Calendar** (default)
 - **Events**
 - **Settings**
@@ -220,7 +221,7 @@ The app has a bottom navigation bar with three tabs:
 Shown when a date is selected. Contains:
 
 1. **Date heading** — full date string (e.g., "Thursday, March 26, 2026").
-2. **Projected balance** — "Available PTO: X.X hrs" (or "—" if unknown). Shown in red if below reserve.
+2. **Projected balance** — "Remaining PTO: X.X hrs" (or "—" if unknown). Shown in red if below reserve.
 3. **Annotation list** — one row per annotation on this date, each with:
    - Annotation type label and summary (e.g., "Pay-day · +4.0 hrs accrued (balance: 40.0 hrs)", "Pay-day · +4.0 hrs accrued", "Time Off · Full day (planned)", "Unpaid · 3 days").
    - Edit button (pencil icon).
@@ -251,22 +252,24 @@ Used both inline (Day Panel "Add" button) and in a modal (Events view "+" button
 ### 6.1 Fields
 
 **Date / Date Range**
+
 - Single date picker (default: the selected date or today).
 - For `timeoff` and `unpaid`: a second date picker appears for the end date; by default the end date is the same as the start date.
 - `payday` is always single-date.
 
 **Annotation Type** — segmented control or select:
+
 - Time Off (default)
 - Pay-day
 - Unpaid
 
 **Type-specific fields:**
 
-| Type | Fields |
-|---|---|
+| Type     | Fields                                                                                                                                                                 |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Time Off | Duration: "Full day (scheduled hours)" for any range; or "Partial" + hours input for single-day entries only — the partial option is hidden when `endDate ≠ startDate` |
-| Pay-day | Hours accrued this period (number input, > 0); optional "Current balance" toggle + hours input (≥ 0) to anchor the running total |
-| Unpaid | (no additional fields) |
+| Pay-day  | Hours accrued this period (number input, > 0); optional "Current balance" toggle + hours input (≥ 0) to anchor the running total                                       |
+| Unpaid   | (no additional fields)                                                                                                                                                 |
 
 ### 6.2 Validation
 
@@ -286,15 +289,15 @@ Used both inline (Day Panel "Add" button) and in a modal (Events view "+" button
 
 ## 7. Technology Stack
 
-| Concern | Choice |
-|---|---|
-| Language | TypeScript (strict mode) |
-| Framework | React |
+| Concern       | Choice                                       |
+| ------------- | -------------------------------------------- |
+| Language      | TypeScript (strict mode)                     |
+| Framework     | React                                        |
 | UI Components | shadcn/ui (built on Radix UI + Tailwind CSS) |
-| Build tool | Vite |
-| Testing | Vitest |
-| Storage | `localStorage` |
-| Deployment | Static site (no server) |
+| Build tool    | Vite                                         |
+| Testing       | Vitest                                       |
+| Storage       | `localStorage`                               |
+| Deployment    | Static site (no server)                      |
 
 ---
 

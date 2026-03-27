@@ -1,7 +1,171 @@
+import { useState, useMemo } from 'react'
+import { Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { DayPanel } from '@/components/DayPanel'
+import { AnnotationForm } from '@/components/AnnotationForm'
+import { useAppData } from '@/store/useAppData'
+import { getAnnotatedDatesInRange } from '@/lib/pto'
+import type { Annotation, TimeOffAnnotation, UnpaidAnnotation } from '@/lib/types'
+
+function useData() {
+  const version = useAppData((s) => s.version)
+  const reserveHours = useAppData((s) => s.reserveHours)
+  const workSchedule = useAppData((s) => s.workSchedule)
+  const annotations = useAppData((s) => s.annotations)
+  return useMemo(
+    () => ({ version, reserveHours, workSchedule, annotations }),
+    [version, reserveHours, workSchedule, annotations],
+  )
+}
+
 export function EventsView() {
+  const data = useData()
+  const addAnnotation = useAppData((s) => s.addAnnotation)
+  const updatePayday = useAppData((s) => s.updatePayday)
+  const updateRange = useAppData((s) => s.updateRange)
+
+  const [showForm, setShowForm] = useState(false)
+  const [editTarget, setEditTarget] = useState<{ annotation: Annotation; date: string } | null>(
+    null,
+  )
+  const [formDate, setFormDate] = useState<string | null>(null)
+
+  const today = new Date().toISOString().slice(0, 10)
+
+  // Get all annotated dates in a wide range
+  const allDates = useMemo(() => {
+    const start = '2000-01-01'
+    const end = '2099-12-31'
+    return getAnnotatedDatesInRange(data, start, end)
+  }, [data])
+
+  // Deduplicate: for range annotations, only show the start date
+  const eventDates = useMemo(() => {
+    const seen = new Set<string>()
+    const result: string[] = []
+    for (const date of allDates) {
+      if (!seen.has(date)) {
+        seen.add(date)
+        result.push(date)
+      }
+    }
+    return result
+  }, [allDates])
+
+  const pastDates = eventDates.filter((d) => d < today)
+  const upcomingDates = eventDates.filter((d) => d >= today)
+
+  function handleSave(annotation: Annotation) {
+    if (editTarget) {
+      // Editing existing annotation
+      const original = editTarget.annotation
+      if (original.type === 'payday' && annotation.type === 'payday') {
+        updatePayday(annotation)
+      } else if (original.type !== 'payday' && annotation.type !== 'payday') {
+        updateRange(
+          original as TimeOffAnnotation | UnpaidAnnotation,
+          annotation as TimeOffAnnotation | UnpaidAnnotation,
+          'replace',
+        )
+      }
+    } else {
+      addAnnotation(annotation)
+    }
+    setShowForm(false)
+    setEditTarget(null)
+  }
+
+  function handleEdit(annotation: Annotation, date: string) {
+    setEditTarget({ annotation, date })
+    setShowForm(true)
+  }
+
+  function handleAdd(date: string) {
+    setEditTarget(null)
+    setFormDate(date)
+    setShowForm(true)
+  }
+
+  if (showForm) {
+    return (
+      <div className="w-full">
+        <AnnotationForm
+          defaultDate={editTarget?.date ?? formDate ?? today}
+          editingAnnotation={editTarget?.annotation}
+          onSave={handleSave}
+          onCancel={() => {
+            setShowForm(false)
+            setEditTarget(null)
+          }}
+        />
+      </div>
+    )
+  }
+
+  if (eventDates.length === 0) {
+    return (
+      <div className="relative flex h-full min-h-[50dvh] items-center justify-center">
+        <p className="text-muted-foreground">No events yet. Tap + to add one.</p>
+        <AddButton
+          onClick={() => {
+            setEditTarget(null)
+            setShowForm(true)
+          }}
+        />
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-1 items-center justify-center">
-      <p className="text-muted-foreground">Events view coming soon</p>
+    <div className="relative w-full pb-20">
+      {pastDates.length > 0 && (
+        <>
+          <div className="bg-muted/50 px-4 py-2">
+            <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+              Past
+            </span>
+          </div>
+          {pastDates.map((date) => (
+            <div key={date} className="border-border border-b">
+              <DayPanel date={date} onAddAnnotation={handleAdd} onEditAnnotation={handleEdit} />
+            </div>
+          ))}
+        </>
+      )}
+
+      {upcomingDates.length > 0 && (
+        <>
+          <div className="bg-muted/50 px-4 py-2">
+            <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+              Upcoming
+            </span>
+          </div>
+          {upcomingDates.map((date) => (
+            <div key={date} className="border-border border-b">
+              <DayPanel date={date} onAddAnnotation={handleAdd} onEditAnnotation={handleEdit} />
+            </div>
+          ))}
+        </>
+      )}
+
+      <AddButton
+        onClick={() => {
+          setEditTarget(null)
+          setShowForm(true)
+        }}
+      />
     </div>
+  )
+}
+
+function AddButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button
+      size="icon"
+      className="fixed right-4 bottom-20 z-10 h-14 w-14 rounded-full shadow-lg"
+      onClick={onClick}
+    >
+      <Plus className="h-6 w-6" />
+    </Button>
   )
 }
