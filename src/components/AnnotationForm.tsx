@@ -19,6 +19,8 @@ import type { Annotation, AnnotationType, AppData } from '@/lib/types'
 interface AnnotationFormProps {
   defaultDate: string
   editingAnnotation?: Annotation | null
+  /** Pre-populate fields without entering edit mode (e.g. for projected paydays) */
+  defaultValues?: Annotation
   onSave: (annotation: Annotation) => void
   onCancel: () => void
 }
@@ -43,53 +45,48 @@ function useData(): AppData {
 export function AnnotationForm({
   defaultDate,
   editingAnnotation,
+  defaultValues,
   onSave,
   onCancel,
 }: AnnotationFormProps) {
   const data = useData()
   const isEditing = !!editingAnnotation
 
-  const [type, setType] = useState<AnnotationType>(editingAnnotation?.type ?? 'timeoff')
+  // Use editingAnnotation for pre-population, falling back to defaultValues
+  const prefill = editingAnnotation ?? defaultValues
+
+  const [type, setType] = useState<AnnotationType>(prefill?.type ?? 'timeoff')
 
   // Date fields
-  const defaultStart = editingAnnotation
-    ? editingAnnotation.type === 'payday'
-      ? editingAnnotation.date
-      : editingAnnotation.startDate
+  const defaultStart = prefill
+    ? prefill.type === 'payday'
+      ? prefill.date
+      : prefill.startDate
     : defaultDate
-  const defaultEnd =
-    editingAnnotation && editingAnnotation.type !== 'payday'
-      ? editingAnnotation.endDate
-      : defaultStart
+  const defaultEnd = prefill && prefill.type !== 'payday' ? prefill.endDate : defaultStart
 
   const [startDate, setStartDate] = useState(defaultStart)
   const [endDate, setEndDate] = useState(defaultEnd)
 
   // Time Off fields
   const defaultDuration =
-    editingAnnotation?.type === 'timeoff'
-      ? editingAnnotation.hours === 'full'
-        ? 'full'
-        : 'partial'
-      : 'full'
+    prefill?.type === 'timeoff' ? (prefill.hours === 'full' ? 'full' : 'partial') : 'full'
   const defaultPartialHours =
-    editingAnnotation?.type === 'timeoff' && editingAnnotation.hours !== 'full'
-      ? String(editingAnnotation.hours)
-      : ''
+    prefill?.type === 'timeoff' && prefill.hours !== 'full' ? String(prefill.hours) : ''
 
   const [duration, setDuration] = useState<'full' | 'partial'>(defaultDuration)
   const [partialHours, setPartialHours] = useState(defaultPartialHours)
 
   // Pay-day fields
   const [hoursAccrued, setHoursAccrued] = useState(
-    editingAnnotation?.type === 'payday' ? String(editingAnnotation.hoursAccrued) : '',
+    prefill?.type === 'payday' ? String(prefill.hoursAccrued) : '',
   )
   const [anchorEnabled, setAnchorEnabled] = useState(
-    editingAnnotation?.type === 'payday' && editingAnnotation.currentHours !== undefined,
+    prefill?.type === 'payday' && prefill.currentHours !== undefined,
   )
   const [currentHours, setCurrentHours] = useState(
-    editingAnnotation?.type === 'payday' && editingAnnotation.currentHours !== undefined
-      ? String(editingAnnotation.currentHours)
+    prefill?.type === 'payday' && prefill.currentHours !== undefined
+      ? String(prefill.currentHours)
       : '',
   )
 

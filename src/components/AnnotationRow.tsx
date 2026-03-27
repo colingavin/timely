@@ -18,6 +18,7 @@ interface AnnotationRowProps {
   date: string
   onEdit: () => void
   onDelete: (mode: RangeEditMode) => void
+  hideDelete?: boolean
 }
 
 function daysBetweenInclusive(start: string, end: string): number {
@@ -60,7 +61,13 @@ function formatShort(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export function AnnotationRow({ annotation, date, onEdit, onDelete }: AnnotationRowProps) {
+export function AnnotationRow({
+  annotation,
+  date,
+  onEdit,
+  onDelete,
+  hideDelete,
+}: AnnotationRowProps) {
   const summary = summarize(annotation, date)
   const multiDay = isMultiDayRange(annotation)
 
@@ -70,36 +77,38 @@ export function AnnotationRow({ annotation, date, onEdit, onDelete }: Annotation
       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
         <Pencil className="h-4 w-4" />
       </Button>
-      <AlertDialog>
-        <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8" />}>
-          <Trash2 className="text-destructive h-4 w-4" />
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete annotation?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {multiDay
-                ? `This ${annotation.type === 'timeoff' ? 'time off' : 'unpaid'} annotation spans ${formatShort((annotation as { startDate: string }).startDate)} – ${formatShort((annotation as { endDate: string }).endDate)}. Delete just this day or the entire range?`
-                : `This will remove this ${annotation.type === 'payday' ? 'pay-day' : annotation.type === 'timeoff' ? 'time off' : 'unpaid'} annotation.`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            {multiDay ? (
-              <>
-                <AlertDialogAction variant="outline" onClick={() => onDelete('split')}>
-                  Just this day
-                </AlertDialogAction>
-                <AlertDialogAction onClick={() => onDelete('replace')}>
-                  Entire range
-                </AlertDialogAction>
-              </>
-            ) : (
-              <AlertDialogAction onClick={() => onDelete('replace')}>Delete</AlertDialogAction>
-            )}
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {!hideDelete && (
+        <AlertDialog>
+          <AlertDialogTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8" />}>
+            <Trash2 className="text-destructive h-4 w-4" />
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete annotation?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {multiDay
+                  ? `This ${annotation.type === 'timeoff' ? 'time off' : 'unpaid'} annotation spans ${formatShort((annotation as { startDate: string }).startDate)} – ${formatShort((annotation as { endDate: string }).endDate)}. Delete just this day or the entire range?`
+                  : `This will remove this ${annotation.type === 'payday' ? 'pay-day' : annotation.type === 'timeoff' ? 'time off' : 'unpaid'} annotation.`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              {multiDay ? (
+                <>
+                  <AlertDialogAction variant="outline" onClick={() => onDelete('split')}>
+                    Just this day
+                  </AlertDialogAction>
+                  <AlertDialogAction onClick={() => onDelete('replace')}>
+                    Entire range
+                  </AlertDialogAction>
+                </>
+              ) : (
+                <AlertDialogAction onClick={() => onDelete('replace')}>Delete</AlertDialogAction>
+              )}
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   )
 }

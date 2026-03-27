@@ -302,7 +302,82 @@ export function getDatesBelowReserve(data: AppData, start: string, end: string):
 }
 
 // ---------------------------------------------------------------------------
-// 3.5 Mutations (all return new AppData, never mutate in place)
+// 3.5 Projected Pay Days
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns dates within [start, end] where auto-accrual would occur (every 14 days
+ * after the most recent explicit payday), excluding dates that already have an
+ * explicit payday annotation. Each entry includes the projected accrual rate.
+ */
+export function getProjectedPaydays(
+  data: AppData,
+  start: string,
+  end: string,
+): { date: string; hoursAccrued: number }[] {
+  // Find the most recent explicit payday on or before `end`
+  const paydays = data.annotations
+    .filter((a): a is PaydayAnnotation => a.type === 'payday')
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  // Find the last explicit payday on or before `start` to establish the cadence
+  let lastPayday: PaydayAnnotation | null = null
+  for (const pd of paydays) {
+    if (pd.date <= start) lastPayday = pd
+  }
+  if (!lastPayday) {
+    // Also check if there's one between start and end to seed from
+    for (const pd of paydays) {
+      if (pd.date >= start && pd.date <= end) {
+        lastPayday = pd
+        break
+      }
+    }
+  }
+  if (!lastPayday) return []
+
+  const explicitDates = new Set(paydays.map((p) => p.date))
+  const result: { date: string; hoursAccrued: number }[] = []
+
+  // Walk from the last payday forward in 14-day increments
+  let cur = lastPayday.date
+  let rate = lastPayday.hoursAccrued
+
+  // Advance through explicit paydays that might update the rate before our range
+  for (const pd of paydays) {
+    if (pd.date > cur && pd.date <= end) {
+      // Check if there's a closer explicit payday to reset from
+      if (pd.date < start) {
+        cur = pd.date
+        rate = pd.hoursAccrued
+      }
+    }
+  }
+
+  // Generate projected dates every 14 days
+  let next = addDays(cur, 14)
+  while (next <= end) {
+    // If we hit an explicit payday, reset cadence and rate from it
+    const explicit = paydays.find((p) => p.date > cur && p.date <= next)
+    if (explicit) {
+      cur = explicit.date
+      rate = explicit.hoursAccrued
+      next = addDays(cur, 14)
+      continue
+    }
+
+    if (next >= start && !explicitDates.has(next)) {
+      result.push({ date: next, hoursAccrued: rate })
+    }
+    cur = next
+    next = addDays(cur, 14)
+  }
+
+  return result
+}
+
+// ---------------------------------------------------------------------------
+// 3.6 Mutations (all return new AppData, never mutate in place)
 // ---------------------------------------------------------------------------
 
 export function addAnnotation(data: AppData, annotation: Annotation): AppData {

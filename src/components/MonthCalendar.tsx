@@ -255,12 +255,14 @@ function DayCellView({ info, today, isSelected, onSelect }: DayCellViewProps) {
         {info.hasUnpaid && <span className="bg-gray-400 h-1.5 w-1.5 rounded-full" />}
       </div>
 
-      {/* Balance change */}
-      {balanceChanged && balance !== null && (
-        <span className="text-muted-foreground text-[9px] leading-none">
-          {formatBalance(balance)}
-        </span>
-      )}
+      {/* Balance display: show on any day with payday/timeoff, or where balance changed */}
+      {cell.inMonth &&
+        balance !== null &&
+        (balanceChanged || info.hasPayday || info.hasTimeoff) && (
+          <span className="text-muted-foreground text-[9px] leading-none">
+            {formatBalance(balance)}
+          </span>
+        )}
     </button>
   )
 }

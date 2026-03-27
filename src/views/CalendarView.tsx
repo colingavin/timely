@@ -5,7 +5,7 @@ import { MonthCalendar } from '@/components/MonthCalendar'
 import { DayPanel } from '@/components/DayPanel'
 import { AnnotationForm } from '@/components/AnnotationForm'
 import { useAppData } from '@/store/useAppData'
-import type { Annotation, TimeOffAnnotation, UnpaidAnnotation } from '@/lib/types'
+import type { Annotation, PaydayAnnotation, TimeOffAnnotation, UnpaidAnnotation } from '@/lib/types'
 
 const MONTHS_BEFORE = 12
 const MONTHS_AFTER = 12
@@ -53,6 +53,7 @@ export function CalendarView() {
   const [editTarget, setEditTarget] = useState<{ annotation: Annotation; date: string } | null>(
     null,
   )
+  const [defaultPayday, setDefaultPayday] = useState<PaydayAnnotation | null>(null)
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), [])
 
@@ -175,16 +176,25 @@ export function CalendarView() {
     setShowForm(true)
   }
 
+  function handleEditProjectedPayday(date: string, hoursAccrued: number) {
+    setEditTarget(null)
+    setDefaultPayday({ type: 'payday', date, hoursAccrued })
+    setSelectedDate(date)
+    setShowForm(true)
+  }
+
   if (showForm) {
     return (
       <div className="w-full">
         <AnnotationForm
           defaultDate={editTarget?.date ?? selectedDate ?? today}
           editingAnnotation={editTarget?.annotation}
+          defaultValues={defaultPayday ?? undefined}
           onSave={handleSave}
           onCancel={() => {
             setShowForm(false)
             setEditTarget(null)
+            setDefaultPayday(null)
           }}
         />
       </div>
@@ -254,6 +264,7 @@ export function CalendarView() {
             date={selectedDate}
             onAddAnnotation={handleAddAnnotation}
             onEditAnnotation={handleEditAnnotation}
+            onEditProjectedPayday={handleEditProjectedPayday}
           />
         </div>
       )}
