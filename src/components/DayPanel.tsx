@@ -77,7 +77,7 @@ export function DayPanel({
       <p
         className={`text-sm ${belowReserve ? 'text-destructive font-medium' : 'text-muted-foreground'}`}
       >
-        Remaining PTO:{' '}
+        Remaining APL:{' '}
         {balance !== null
           ? `${balance % 1 === 0 ? balance : parseFloat(balance.toFixed(2))} hrs`
           : '—'}

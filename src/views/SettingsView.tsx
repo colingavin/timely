@@ -137,7 +137,7 @@ export function SettingsView() {
       {/* Reserve PTO */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Reserve PTO</CardTitle>
+          <CardTitle className="text-base">Reserve APL</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-3">
@@ -159,7 +159,7 @@ export function SettingsView() {
             />
           </div>
           <p className="text-muted-foreground mt-2 text-sm">
-            Dates where your projected PTO drops below this amount will be flagged.
+            Dates where your projected APL drops below this amount will be flagged.
           </p>
         </CardContent>
       </Card>

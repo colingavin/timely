@@ -423,7 +423,7 @@ export function AnnotationForm({
                   inputMode="decimal"
                   min={0}
                   step="any"
-                  placeholder="Current PTO balance"
+                  placeholder="Current APL balance"
                   value={currentHours}
                   onChange={(e) => setCurrentHours(e.target.value)}
                   className="w-32"

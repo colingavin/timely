@@ -278,7 +278,7 @@ function ProjectedPaydayPanel({ date, hoursAccrued, data, onEdit }: ProjectedPay
       <p
         className={`text-sm ${belowReserve ? 'text-destructive font-medium' : 'text-muted-foreground'}`}
       >
-        Remaining PTO: {balance !== null ? `${formatBalance(balance)} hrs` : '—'}
+        Remaining APL: {balance !== null ? `${formatBalance(balance)} hrs` : '—'}
       </p>
       <div className="flex items-center gap-2 py-1.5">
         <span className="text-muted-foreground flex-1 text-sm italic">
