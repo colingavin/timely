@@ -16,17 +16,19 @@ import type {
 function useData(): AppData {
   const version = useAppData((s) => s.version)
   const reserveHours = useAppData((s) => s.reserveHours)
+  const yearlyAdditionalHours = useAppData((s) => s.yearlyAdditionalHours)
   const workSchedule = useAppData((s) => s.workSchedule)
   const annotations = useAppData((s) => s.annotations)
   return useMemo(
-    () => ({ version, reserveHours, workSchedule, annotations }),
-    [version, reserveHours, workSchedule, annotations],
+    () => ({ version, reserveHours, yearlyAdditionalHours, workSchedule, annotations }),
+    [version, reserveHours, yearlyAdditionalHours, workSchedule, annotations],
   )
 }
 
 type EventEntry =
   | { kind: 'annotated'; date: string }
   | { kind: 'projected-payday'; date: string; hoursAccrued: number }
+  | { kind: 'yearly-accrual'; date: string; hours: number }
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00')
@@ -87,6 +89,21 @@ export function EventsView() {
           date: pp.date,
           hoursAccrued: pp.hoursAccrued,
         })
+      }
+    }
+
+    // Add yearly accrual dates (Jan 1) within range if yearlyAdditionalHours > 0
+    if (data.yearlyAdditionalHours > 0) {
+      const currentYear = new Date().getFullYear()
+      for (let y = currentYear; y <= currentYear + 1; y++) {
+        const jan1 = `${y}-01-01`
+        if (jan1 >= today && jan1 <= endStr && !entryMap.has(jan1)) {
+          entryMap.set(jan1, {
+            kind: 'yearly-accrual',
+            date: jan1,
+            hours: data.yearlyAdditionalHours,
+          })
+        }
       }
     }
 
@@ -174,6 +191,9 @@ export function EventsView() {
       return (
         <DayPanel date={entry.date} onAddAnnotation={handleAdd} onEditAnnotation={handleEdit} />
       )
+    }
+    if (entry.kind === 'yearly-accrual') {
+      return <YearlyAccrualPanel date={entry.date} hours={entry.hours} data={data} />
     }
     return (
       <ProjectedPaydayPanel
@@ -287,6 +307,37 @@ function ProjectedPaydayPanel({ date, hoursAccrued, data, onEdit }: ProjectedPay
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
           <Pencil className="h-4 w-4" />
         </Button>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Yearly Accrual Panel
+// ---------------------------------------------------------------------------
+
+interface YearlyAccrualPanelProps {
+  date: string
+  hours: number
+  data: AppData
+}
+
+function YearlyAccrualPanel({ date, hours, data }: YearlyAccrualPanelProps) {
+  const balance = getBalanceOnDate(data, date)
+  const belowReserve = balance !== null && balance < data.reserveHours
+
+  return (
+    <div className="flex flex-col gap-2 p-4">
+      <h2 className="text-base font-medium">{formatDate(date)}</h2>
+      <p
+        className={`text-sm ${belowReserve ? 'text-destructive font-medium' : 'text-muted-foreground'}`}
+      >
+        Remaining APL: {balance !== null ? `${formatBalance(balance)} hrs` : '—'}
+      </p>
+      <div className="flex items-center gap-2 py-1.5">
+        <span className="text-muted-foreground flex-1 text-sm italic">
+          Yearly accrual · +{hours} hrs
+        </span>
       </div>
     </div>
   )

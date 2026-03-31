@@ -262,6 +262,11 @@ export function getBalanceOnDate(data: AppData, date: string): number | null {
       unpaidHours = 0
     }
 
+    // Yearly additional hours on Jan 1
+    if (data.yearlyAdditionalHours > 0 && cur.endsWith('-01-01')) {
+      balance += data.yearlyAdditionalHours
+    }
+
     // Pay-day annotation
     if (entry?.payday) {
       if (entry.payday.currentHours !== undefined) {

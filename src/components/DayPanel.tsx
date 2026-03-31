@@ -27,11 +27,12 @@ function formatDate(dateStr: string): string {
 function useData(): AppData {
   const version = useAppData((s) => s.version)
   const reserveHours = useAppData((s) => s.reserveHours)
+  const yearlyAdditionalHours = useAppData((s) => s.yearlyAdditionalHours)
   const workSchedule = useAppData((s) => s.workSchedule)
   const annotations = useAppData((s) => s.annotations)
   return useMemo(
-    () => ({ version, reserveHours, workSchedule, annotations }),
-    [version, reserveHours, workSchedule, annotations],
+    () => ({ version, reserveHours, yearlyAdditionalHours, workSchedule, annotations }),
+    [version, reserveHours, yearlyAdditionalHours, workSchedule, annotations],
   )
 }
 
@@ -61,6 +62,10 @@ export function DayPanel({
     return projected.length > 0 ? projected[0] : null
   }, [data, date, resolved.payday])
 
+  // Check if this date is a Jan 1 with yearly additional hours
+  const yearlyAccrual =
+    data.yearlyAdditionalHours > 0 && date.endsWith('-01-01') ? data.yearlyAdditionalHours : null
+
   function handleDelete(annotation: Annotation, mode: RangeEditMode) {
     if (annotation.type === 'payday') {
       removePayday(annotation.date)
@@ -69,7 +74,7 @@ export function DayPanel({
     }
   }
 
-  const hasContent = annotations.length > 0 || projectedPayday
+  const hasContent = annotations.length > 0 || projectedPayday || yearlyAccrual
 
   return (
     <div className="flex flex-col gap-2 p-4">
@@ -94,6 +99,13 @@ export function DayPanel({
               onDelete={(mode) => handleDelete(ann, mode)}
             />
           ))}
+          {yearlyAccrual && (
+            <div className="flex items-center gap-2 py-1.5">
+              <span className="text-muted-foreground flex-1 text-sm italic">
+                Yearly accrual · +{yearlyAccrual} hrs
+              </span>
+            </div>
+          )}
           {projectedPayday && (
             <div className="flex items-center gap-2 py-1.5">
               <span className="text-muted-foreground flex-1 text-sm italic">

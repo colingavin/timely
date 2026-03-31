@@ -38,7 +38,9 @@ const DAYS: { key: keyof WorkSchedule; label: string }[] = [
 export function SettingsView() {
   const reserveHours = useAppData((s) => s.reserveHours)
   const workSchedule = useAppData((s) => s.workSchedule)
+  const yearlyAdditionalHours = useAppData((s) => s.yearlyAdditionalHours)
   const setReserveHours = useAppData((s) => s.setReserveHours)
+  const setYearlyAdditionalHours = useAppData((s) => s.setYearlyAdditionalHours)
   const setWorkSchedule = useAppData((s) => s.setWorkSchedule)
   const exportJSON = useAppData((s) => s.exportJSON)
   const importJSON = useAppData((s) => s.importJSON)
@@ -160,6 +162,36 @@ export function SettingsView() {
           </div>
           <p className="text-muted-foreground mt-2 text-sm">
             Dates where your projected APL drops below this amount will be flagged.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Yearly Additional Hours */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Yearly Additional Hours</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-3">
+            <Label htmlFor="yearly-hours" className="shrink-0">
+              Hours per year
+            </Label>
+            <Input
+              id="yearly-hours"
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="any"
+              defaultValue={yearlyAdditionalHours}
+              onBlur={(e) => {
+                const v = parseFloat(e.target.value)
+                if (!isNaN(v) && v >= 0) setYearlyAdditionalHours(v)
+              }}
+              className="w-24"
+            />
+          </div>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Additional hours added to your balance on January 1 each year.
           </p>
         </CardContent>
       </Card>

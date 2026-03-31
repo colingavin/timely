@@ -34,11 +34,12 @@ const TYPE_OPTIONS: { value: AnnotationType; label: string }[] = [
 function useData(): AppData {
   const version = useAppData((s) => s.version)
   const reserveHours = useAppData((s) => s.reserveHours)
+  const yearlyAdditionalHours = useAppData((s) => s.yearlyAdditionalHours)
   const workSchedule = useAppData((s) => s.workSchedule)
   const annotations = useAppData((s) => s.annotations)
   return useMemo(
-    () => ({ version, reserveHours, workSchedule, annotations }),
-    [version, reserveHours, workSchedule, annotations],
+    () => ({ version, reserveHours, yearlyAdditionalHours, workSchedule, annotations }),
+    [version, reserveHours, yearlyAdditionalHours, workSchedule, annotations],
   )
 }
 

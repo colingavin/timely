@@ -42,6 +42,7 @@ export type AnnotationType = 'payday' | 'timeoff' | 'unpaid'
 export interface AppData {
   version: 1
   reserveHours: number
+  yearlyAdditionalHours: number
   workSchedule: WorkSchedule
   annotations: Annotation[]
 }
@@ -70,6 +71,7 @@ export const DEFAULT_WORK_SCHEDULE: WorkSchedule = {
 export const DEFAULT_APP_DATA: AppData = {
   version: 1,
   reserveHours: 0,
+  yearlyAdditionalHours: 0,
   workSchedule: { ...DEFAULT_WORK_SCHEDULE },
   annotations: [],
 }

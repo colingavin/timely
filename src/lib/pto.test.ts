@@ -40,6 +40,7 @@ function makeData(overrides: Partial<AppData> = {}): AppData {
   return {
     version: 1,
     reserveHours: 0,
+    yearlyAdditionalHours: 0,
     workSchedule: schedule,
     annotations: [],
     ...overrides,

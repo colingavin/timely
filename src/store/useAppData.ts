@@ -25,7 +25,10 @@ function loadFromStorage(): AppData {
     if (raw) {
       const parsed = JSON.parse(raw) as AppData
       if (parsed.version === 1 && Array.isArray(parsed.annotations)) {
-        return parsed
+        return {
+          ...DEFAULT_APP_DATA,
+          ...parsed,
+        }
       }
     }
   } catch {
@@ -61,6 +64,7 @@ interface AppDataStore extends AppData {
 
   // Settings
   setReserveHours: (hours: number) => void
+  setYearlyAdditionalHours: (hours: number) => void
   setWorkSchedule: (schedule: WorkSchedule) => void
 
   // Import / Export
@@ -73,6 +77,7 @@ function dataFromState(state: AppDataStore): AppData {
   return {
     version: state.version,
     reserveHours: state.reserveHours,
+    yearlyAdditionalHours: state.yearlyAdditionalHours,
     workSchedule: state.workSchedule,
     annotations: state.annotations,
   }
@@ -83,6 +88,7 @@ function applyData(newData: AppData): Partial<AppDataStore> {
   return {
     version: newData.version,
     reserveHours: newData.reserveHours,
+    yearlyAdditionalHours: newData.yearlyAdditionalHours,
     workSchedule: newData.workSchedule,
     annotations: newData.annotations,
   }
@@ -127,6 +133,11 @@ export const useAppData = create<AppDataStore>((set, get) => {
 
     setReserveHours: (hours) => {
       const newData = { ...dataFromState(get()), reserveHours: hours }
+      set(applyData(newData))
+    },
+
+    setYearlyAdditionalHours: (hours) => {
+      const newData = { ...dataFromState(get()), yearlyAdditionalHours: hours }
       set(applyData(newData))
     },
 
