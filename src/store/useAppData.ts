@@ -48,7 +48,7 @@ function persist(data: AppData): void {
 interface AppDataStore extends AppData {
   // Mutations
   addAnnotation: (annotation: Annotation) => void
-  updatePayday: (updated: PaydayAnnotation) => void
+  updatePayday: (originalDate: string, updated: PaydayAnnotation) => void
   removePayday: (date: string) => void
   updateRange: (
     original: TimeOffAnnotation | UnpaidAnnotation,
@@ -105,8 +105,8 @@ export const useAppData = create<AppDataStore>((set, get) => {
       set(applyData(result))
     },
 
-    updatePayday: (updated) => {
-      const result = updatePaydayAnnotation(dataFromState(get()), updated)
+    updatePayday: (originalDate, updated) => {
+      const result = updatePaydayAnnotation(dataFromState(get()), originalDate, updated)
       set(applyData(result))
     },
 

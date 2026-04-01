@@ -132,7 +132,7 @@ export function EventsView() {
     if (editTarget) {
       const original = editTarget.annotation
       if (original.type === 'payday' && annotation.type === 'payday') {
-        updatePayday(annotation)
+        updatePayday(original.date, annotation)
       } else if (original.type !== 'payday' && annotation.type !== 'payday') {
         updateRange(
           original as TimeOffAnnotation | UnpaidAnnotation,

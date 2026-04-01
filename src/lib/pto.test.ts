@@ -534,8 +534,22 @@ describe('updatePaydayAnnotation', () => {
       hoursAccrued: 6,
       currentHours: 50,
     }
-    const result = updatePaydayAnnotation(data, updated)
+    const result = updatePaydayAnnotation(data, '2026-01-09', updated)
     expect(result.annotations[0]).toEqual(updated)
+  })
+
+  it('updates the date of a payday annotation', () => {
+    const data = makeData({
+      annotations: [{ type: 'payday', date: '2026-01-09', hoursAccrued: 4 }],
+    })
+    const updated: PaydayAnnotation = {
+      type: 'payday',
+      date: '2026-01-16',
+      hoursAccrued: 4,
+    }
+    const result = updatePaydayAnnotation(data, '2026-01-09', updated)
+    expect(result.annotations).toHaveLength(1)
+    expect((result.annotations[0] as PaydayAnnotation).date).toBe('2026-01-16')
   })
 
   it('leaves other annotations untouched', () => {
@@ -548,7 +562,7 @@ describe('updatePaydayAnnotation', () => {
     const data = makeData({
       annotations: [{ type: 'payday', date: '2026-01-09', hoursAccrued: 4 }, to],
     })
-    const result = updatePaydayAnnotation(data, {
+    const result = updatePaydayAnnotation(data, '2026-01-09', {
       type: 'payday',
       date: '2026-01-09',
       hoursAccrued: 6,
@@ -643,6 +657,36 @@ describe('updateRangeAnnotation', () => {
     const updated: TimeOffAnnotation = { ...original, hours: 'full' }
     const result = updateRangeAnnotation(data, original, updated, 'split')
     expect(result.annotations).toHaveLength(1)
+  })
+
+  it('replace mode updates to a completely different date range', () => {
+    const data = makeData({ annotations: [original] })
+    const updated: TimeOffAnnotation = {
+      type: 'timeoff',
+      startDate: '2026-02-02',
+      endDate: '2026-02-06',
+      hours: 'full',
+    }
+    const result = updateRangeAnnotation(data, original, updated, 'replace')
+    expect(result.annotations).toHaveLength(1)
+    expect(result.annotations[0]).toEqual(updated)
+  })
+
+  it('replace mode updates an unpaid annotation to different dates', () => {
+    const unpaid: UnpaidAnnotation = {
+      type: 'unpaid',
+      startDate: '2026-01-12',
+      endDate: '2026-01-14',
+    }
+    const data = makeData({ annotations: [unpaid] })
+    const updated: UnpaidAnnotation = {
+      type: 'unpaid',
+      startDate: '2026-02-02',
+      endDate: '2026-02-04',
+    }
+    const result = updateRangeAnnotation(data, unpaid, updated, 'replace')
+    expect(result.annotations).toHaveLength(1)
+    expect(result.annotations[0]).toEqual(updated)
   })
 })
 

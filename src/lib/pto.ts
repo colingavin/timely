@@ -419,11 +419,15 @@ export function addAnnotation(data: AppData, annotation: Annotation): AppData {
   return { ...data, annotations: [...data.annotations, annotation] }
 }
 
-export function updatePaydayAnnotation(data: AppData, updated: PaydayAnnotation): AppData {
+export function updatePaydayAnnotation(
+  data: AppData,
+  originalDate: string,
+  updated: PaydayAnnotation,
+): AppData {
   return {
     ...data,
     annotations: data.annotations.map((a) =>
-      a.type === 'payday' && a.date === updated.date ? updated : a,
+      a.type === 'payday' && a.date === originalDate ? updated : a,
     ),
   }
 }
