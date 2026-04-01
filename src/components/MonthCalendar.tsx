@@ -206,9 +206,9 @@ function roundingClass(pos: RunPosition): string {
 function highlightClass(level: HighlightLevel): string {
   switch (level) {
     case 'yellow':
-      return 'bg-yellow-100'
+      return 'bg-yellow-100 dark:bg-yellow-900/30'
     case 'red':
-      return 'bg-red-100'
+      return 'bg-red-100 dark:bg-red-900/30'
     case 'none':
       return ''
   }
